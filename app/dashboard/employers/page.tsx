@@ -259,7 +259,7 @@ export default function EmployersPage() {
         {(globalFilter || columnFilters.length > 0) && (
           <button onClick={() => { setGlobalFilter(''); setColumnFilters([]) }}
             className="px-3 py-2 rounded-lg text-sm" style={{ color: '#E8673A' }}>
-            Tünü
+            Tümü
           </button>
         )}
       </div>
