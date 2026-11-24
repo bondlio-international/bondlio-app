@@ -324,86 +324,88 @@ export default function IncomePage() {
       </div>
 
       <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1px solid #ede9e3' }}>
-        {loading ? (
-          <div className="p-12 text-center text-gray-400">Yükleniyor...</div>
-        ) : (
-          <>
-            <table className="w-full">
-              <thead>
-                {table.getHeaderGroups().map(hg => (
-                  <tr key={hg.id} style={{ background: '#F7F6FB', borderBottom: '1px solid #ede9e3' }}>
-                    {hg.headers.map(header => (
-                      <th key={header.id} className="text-left px-4 py-3">
-                        {header.isPlaceholder ? null : (
-                          <div
-                            className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-wide select-none ${header.column.getCanSort() ? 'cursor-pointer' : ''}`}
-                            style={{ color: '#9CA3AF' }}
-                            onClick={header.column.getToggleSortingHandler()}>
-                            {flexRender(header.column.columnDef.header, header.getContext())}
-                            {header.column.getCanSort() && (
-                              header.column.getIsSorted() === 'asc' ? <ChevronUp size={12} /> :
-                                header.column.getIsSorted() === 'desc' ? <ChevronDown size={12} /> :
-                                  <ChevronsUpDown size={12} />
-                            )}
-                          </div>
-                        )}
-                      </th>
-                    ))}
-                  </tr>
-                ))}
-              </thead>
-              <tbody>
-                {table.getRowModel().rows.length === 0 ? (
-                  <tr>
-                    <td colSpan={columns.length} className="p-12 text-center text-gray-400">
-                      Gelir kaydı bulunamadı.
-                    </td>
-                  </tr>
-                ) : (
-                  table.getRowModel().rows.map(row => (
-                    <tr key={row.id}
-                      style={{ borderBottom: '1px solid #f3f0eb' }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#fffaf8'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                      {row.getVisibleCells().map(cell => (
-                        <td key={cell.id} className="px-4 py-3">
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </td>
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div className="p-12 text-center text-gray-400">Yükleniyor...</div>
+          ) : (
+            <>
+              <table className="w-full">
+                <thead>
+                  {table.getHeaderGroups().map(hg => (
+                    <tr key={hg.id} style={{ background: '#F7F6FB', borderBottom: '1px solid #ede9e3' }}>
+                      {hg.headers.map(header => (
+                        <th key={header.id} className="text-left px-4 py-3">
+                          {header.isPlaceholder ? null : (
+                            <div
+                              className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-wide select-none ${header.column.getCanSort() ? 'cursor-pointer' : ''}`}
+                              style={{ color: '#9CA3AF' }}
+                              onClick={header.column.getToggleSortingHandler()}>
+                              {flexRender(header.column.columnDef.header, header.getContext())}
+                              {header.column.getCanSort() && (
+                                header.column.getIsSorted() === 'asc' ? <ChevronUp size={12} /> :
+                                  header.column.getIsSorted() === 'desc' ? <ChevronDown size={12} /> :
+                                    <ChevronsUpDown size={12} />
+                              )}
+                            </div>
+                          )}
+                        </th>
                       ))}
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ))}
+                </thead>
+                <tbody>
+                  {table.getRowModel().rows.length === 0 ? (
+                    <tr>
+                      <td colSpan={columns.length} className="p-12 text-center text-gray-400">
+                        Gelir kaydı bulunamadı.
+                      </td>
+                    </tr>
+                  ) : (
+                    table.getRowModel().rows.map(row => (
+                      <tr key={row.id}
+                        style={{ borderBottom: '1px solid #f3f0eb' }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#fffaf8'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                        {row.getVisibleCells().map(cell => (
+                          <td key={cell.id} className="px-4 py-3">
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
 
-            <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid #ede9e3' }}>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Sayfa başı:</span>
-                <select
-                  value={table.getState().pagination.pageSize}
-                  onChange={e => table.setPageSize(Number(e.target.value))}
-                  className="px-2 py-1 rounded text-xs outline-none"
-                  style={{ background: '#F7F6FB', border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                  {[10, 25, 50].map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-                <span className="text-xs text-gray-500">{table.getFilteredRowModel().rows.length} sonuç</span>
+              <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid #ede9e3' }}>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">Sayfa başı:</span>
+                  <select
+                    value={table.getState().pagination.pageSize}
+                    onChange={e => table.setPageSize(Number(e.target.value))}
+                    className="px-2 py-1 rounded text-xs outline-none"
+                    style={{ background: '#F7F6FB', border: '1px solid #ede9e3', color: '#4A4A4A' }}>
+                    {[10, 25, 50].map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <span className="text-xs text-gray-500">{table.getFilteredRowModel().rows.length} sonuç</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">
+                    {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
+                  </span>
+                  <button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}
+                    className="p-1 rounded disabled:opacity-30" style={{ color: '#4A4A4A' }}>
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}
+                    className="p-1 rounded disabled:opacity-30" style={{ color: '#4A4A4A' }}>
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">
-                  {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
-                </span>
-                <button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}
-                  className="p-1 rounded disabled:opacity-30" style={{ color: '#4A4A4A' }}>
-                  <ChevronLeft size={16} />
-                </button>
-                <button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}
-                  className="p-1 rounded disabled:opacity-30" style={{ color: '#4A4A4A' }}>
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       {showModal && (
