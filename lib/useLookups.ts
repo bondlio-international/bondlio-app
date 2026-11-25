@@ -4,12 +4,14 @@ import { createClient } from '@/lib/supabase/client'
 type LookupItem = {
   id: number
   name: string
+  name_en?: string
 }
 
 type LookupItemWithColor = {
   id: number
   name: string
   color?: string
+  name_en?: string
 }
 
 type CurrencyItem = {

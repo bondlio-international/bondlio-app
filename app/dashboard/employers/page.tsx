@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { X } from 'lucide-react'
 import { useLang } from '@/lib/LangContext'
+import { showName, getLabels } from '@/lib/i18n'
 
 type Employer = {
   id: number
@@ -44,62 +45,9 @@ export default function EmployersPage() {
   const supabase = createClient()
   const { lookups } = useLookups()
   const { lang } = useLang()
+  const labels = getLabels(lang)
+  const L = { ...labels, ...labels.employers }
 
-
-  const showName = (name: string, lookup: { name: string; name_en?: string }[]) => {
-    if (!name) return '—'
-    if (lang === 'en') {
-      const found = lookup.find(l => l.name === name)
-      return found?.name_en || name
-    }
-    return name
-  }
-
-
-  const L = {
-    tr: {
-      id: 'ID',
-      name: 'Ad Soyad / Firma',
-      country: 'Ülke',
-      city: 'Şehir / İlçe',
-      children: 'Çocuk',
-      source: 'Kaynak',
-      rank: 'Puan',
-      added: 'Eklenme',
-      pageTitle: 'İşverenler',
-      pageSubtitle: 'işveren kayıtlı',
-      addNew: 'Yeni İşveren',
-      allCities: 'Tüm Şehirler',
-      allSources: 'Tüm Kaynaklar',
-      clear: 'Temizle',
-      notFound: 'İşveren bulunamadı.',
-      search: 'İşveren ara...',
-      loading: 'Yükleniyor...',
-      pageSize: 'Sayfa başı',
-      results: 'sonuç'
-    },
-    en: {
-      id: 'ID',
-      name: 'Full Name / Company',
-      country: 'Country',
-      city: 'City / District',
-      children: 'Children',
-      source: 'Source',
-      rank: 'Rank',
-      added: 'Added',
-      pageTitle: 'Employers',
-      pageSubtitle: 'employers registered',
-      addNew: 'New Employer',
-      allCities: 'All Cities',
-      allSources: 'All Sources',
-      clear: 'Clear',
-      notFound: 'No employers found.',
-      search: 'Search employer...',
-      loading: 'Loading...',
-      pageSize: 'Results per page',
-      results: 'results'
-    }
-  }[lang]
 
   const [employers, setEmployers] = useState<Employer[]>([])
   const [loading, setLoading] = useState(true)
@@ -141,7 +89,7 @@ export default function EmployersPage() {
     },
     {
       accessorKey: 'full_name',
-      header: L.name,
+      header: L.fullName,
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           {row.original.blacklist && <AlertCircle size={13} color="#EF4444" />}
@@ -158,7 +106,7 @@ export default function EmployersPage() {
       header: L.country,
       cell: ({ row }) => (
         <span className="text-sm" style={{ color: '#4A4A4A' }}>
-          {showName(row.original.country, lookups.countries)}
+          {showName(row.original.country, lookups.countries, lang)}
         </span>
       ),
       filterFn: 'equals',
@@ -171,7 +119,7 @@ export default function EmployersPage() {
       cell: ({ row }) => (
         <div>
           <p className="text-sm" style={{ color: '#4A4A4A' }}>
-            {showName(row.original.city, lookups.cities)}
+            {showName(row.original.city, lookups.cities, lang)}
           </p>
           {row.original.district && (
             <p className="text-xs" style={{ color: '#9CA3AF' }}>{row.original.district}</p>
@@ -194,7 +142,7 @@ export default function EmployersPage() {
       header: L.source,
       cell: ({ row }) => (
         <span className="text-sm" style={{ color: '#4A4A4A' }}>
-          {showName(row.original.source, lookups.sources)}
+          {showName(row.original.source, lookups.sources, lang)}
         </span>
       ),
       filterFn: 'equals',
@@ -280,8 +228,8 @@ export default function EmployersPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-bold" style={{ color: '#555' }}>{L.pageTitle}</h2>
-          <p className="text-sm text-gray-500 mt-0.5">{employers.length} {L.pageSubtitle}</p>
+          <h2 className="text-xl font-bold" style={{ color: '#555' }}>{L.title}</h2>
+          <p className="text-sm text-gray-500 mt-0.5">{employers.length} {L.subtitle}</p>
         </div>
         <button
           onClick={() => { setEditingEmployer(null); setShowModal(true) }}
@@ -312,7 +260,7 @@ export default function EmployersPage() {
           style={{ background: '#F7F6FB', border: '1px solid #ede9e3', color: '#4A4A4A' }}>
           <option value="">{L.allCities}</option>
           {lookups.cities.map(c => (
-            <option key={c.id} value={c.name}>{showName(c.name, lookups.cities)}</option>
+            <option key={c.id} value={c.name}> {showName(c.name, lookups.cities, lang)} </option>
           ))}
         </select>
         <select
@@ -325,7 +273,7 @@ export default function EmployersPage() {
           style={{ background: '#F7F6FB', border: '1px solid #ede9e3', color: '#4A4A4A' }}>
           <option value="">{L.allSources}</option>
           {lookups.sources.map(s => (
-            <option key={s.id} value={s.name}>{showName(s.name, lookups.sources)}</option>
+            <option key={s.id} value={s.name}> {showName(s.name, lookups.sources, lang)} </option>
           ))}
         </select>
         {(globalFilter || columnFilters.length > 0) && (
@@ -440,67 +388,8 @@ function EmployerModal({ employer, lookups, onClose, onSave }: {
   onSave: () => void
 }) {
   const { lang } = useLang()
-
-  const showName = (name: string, lookup: { name: string; name_en?: string }[]) => {
-    if (!name) return '—'
-    if (lang === 'en') {
-      const found = lookup.find(l => l.name === name)
-      return found?.name_en || name
-    }
-    return name
-  }
-
-  const L = {
-    tr: {
-      editTitle: 'İşvereni Düzenle',
-      newTitle: 'Yeni İşveren',
-      fullName: 'Ad Soyad / Firma',
-      phone: 'Telefon',
-      email: 'E-posta',
-      country: 'Ülke',
-      city: 'Şehir',
-      district: 'İlçe',
-      numKids: 'Çocuk Sayısı',
-      kidsAges: 'Yaşları',
-      source: 'Kaynak',
-      rank: 'Puan',
-      features: 'Özellikler',
-      notes: 'Notlar',
-      privateRoom: 'Özel Oda Var',
-      noPrivateRoom: 'Özel Oda Yok',
-      blacklist: 'Kara Liste',
-      notBlacklist: 'Kara Liste Değil',
-      cancel: 'İptal',
-      save: 'Kaydet',
-      saving: 'Kaydediliyor...',
-      select: 'Seçiniz',
-    },
-    en: {
-      editTitle: 'Edit Employer',
-      newTitle: 'New Employer',
-      fullName: 'Full Name / Company',
-      phone: 'Phone',
-      email: 'Email',
-      country: 'Country',
-      city: 'City',
-      district: 'District',
-      numKids: 'No. of Children',
-      kidsAges: 'Ages',
-      source: 'Source',
-      rank: 'Rank',
-      features: 'Features',
-      notes: 'Notes',
-      privateRoom: 'Private Room Available',
-      noPrivateRoom: 'No Private Room',
-      blacklist: 'Blacklisted',
-      notBlacklist: 'Not Blacklisted',
-      cancel: 'Cancel',
-      save: 'Save',
-      saving: 'Saving...',
-      select: 'Select',
-    }
-  }[lang]
-
+  const labels = getLabels(lang)
+  const L = { ...labels, ...labels.employers }
 
   const supabase = createClient()
   const [form, setForm] = useState({
@@ -519,6 +408,7 @@ function EmployerModal({ employer, lookups, onClose, onSave }: {
   })
   const [saving, setSaving] = useState(false)
   const set = (field: string, value: unknown) => setForm(f => ({ ...f, [field]: value }))
+
 
   const handleSave = async () => {
     if (!form.full_name) return alert('Ad Soyad zorunludur.')
@@ -580,7 +470,7 @@ function EmployerModal({ employer, lookups, onClose, onSave }: {
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
                 <option value="">{L.select}</option>
                 {lookups.countries.map(c => (
-                  <option key={c.id} value={c.name}>{showName(c.name, lookups.countries)}</option>
+                  <option key={c.id} value={c.name}> {showName(c.name, lookups.countries, lang)}</option>
                 ))}
               </select>
             </div>
@@ -591,7 +481,7 @@ function EmployerModal({ employer, lookups, onClose, onSave }: {
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
                 <option value="">{L.select}</option>
                 {lookups.cities.map(c => (
-                  <option key={c.id} value={c.name}>{showName(c.name, lookups.cities)}</option>
+                  <option key={c.id} value={c.name}> {showName(c.name, lookups.cities, lang)}</option>
                 ))}
               </select>
             </div>
@@ -612,7 +502,7 @@ function EmployerModal({ employer, lookups, onClose, onSave }: {
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
                 <option value="">{L.select}</option>
                 {lookups.sources.map(s => (
-                  <option key={s.id} value={s.name}>{showName(s.name, lookups.sources)}</option>
+                  <option key={s.id} value={s.name}> {showName(s.name, lookups.sources, lang)}</option>
                 ))}
               </select>
             </div>
