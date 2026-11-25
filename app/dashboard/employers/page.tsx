@@ -329,7 +329,7 @@ export default function EmployersPage() {
           ))}
         </select>
         {(globalFilter || columnFilters.length > 0) && (
-          <button onClick={() => { setGlobalFilter(''); setColumnFilters([]) }}
+          <button onClick={() => { setGlobalFilter(''); setColumnFilters([]); setCityFilter(''); setSourceFilter('') }}
             className="px-3 py-2 rounded-lg text-sm" style={{ color: '#E8673A' }}>
             {L.clear}
           </button>
