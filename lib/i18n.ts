@@ -394,11 +394,11 @@ const labelsEn: typeof labelsTr = {
 
     // labelsEn.candidates:
     candidates: {
-        title: 'Candidates',
-        subtitle: 'candidates registered',
-        addNew: 'New Candidate',
+        title: 'Applicants',
+        subtitle: 'applicants registered',
+        addNew: 'New Applicant',
         search: 'Search name or phone...',
-        notFound: 'No candidates found.',
+        notFound: 'No applicants found.',
         allNationalities: 'All Nationalities',
         allStatuses: 'All Statuses',
         allLegal: 'All Legal Statuses',
@@ -535,7 +535,7 @@ const labelsEn: typeof labelsTr = {
         editMatch: 'Edit Match',
         searchPlaceholder: 'Search employer or candidate...',
         allStatuses: 'All Statuses',
-        employerCandidate: 'Employer → Candidate',
+        employerCandidate: 'Employer → Applicant',
         status: 'Status',
         startDate: 'Start Date',
         salary: 'Salary',

@@ -26,7 +26,7 @@ import { useLang } from '@/lib/LangContext'
 const menuItems = [
   { href: '/dashboard', labelTr: 'Genel Bakış', labelEn: 'DashBoard', icon: LayoutDashboard },
   { href: '/dashboard/employers', labelTr: 'İşverenler', labelEn: 'Employers', icon: Building2 },
-  { href: '/dashboard/candidates', labelTr: 'Adaylar', labelEn: 'Candidates', icon: Users },
+  { href: '/dashboard/candidates', labelTr: 'Adaylar', labelEn: 'Applicants', icon: Users },
   { href: '/dashboard/agents', labelTr: 'Aracılar', labelEn: 'Agents', icon: Handshake },
   { href: '/dashboard/requests', labelTr: 'Talepler', labelEn: 'Requests', icon: ClipboardList },
   { href: '/dashboard/matches', labelTr: 'Eşleşmeler', labelEn: 'Matches', icon: Link2 },
