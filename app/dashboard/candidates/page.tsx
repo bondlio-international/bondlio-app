@@ -20,6 +20,9 @@ import {
   Star, X, Cigarette, Wine, Waves, Sparkles, FolderOpen, Info, PawPrint
 } from 'lucide-react'
 
+import { useLang } from '@/lib/LangContext'
+import { showName, getLabels } from '@/lib/i18n'
+
 
 type Candidate = {
   id: number
@@ -57,6 +60,10 @@ type Candidate = {
 }
 
 export default function CandidatesPage() {
+  const { lang } = useLang()
+  const labels = getLabels(lang)
+  const L = { ...labels, ...labels.candidates }
+
   const supabase = createClient()
   const { lookups } = useLookups()
   const [candidates, setCandidates] = useState<Candidate[]>([])
@@ -69,6 +76,8 @@ export default function CandidatesPage() {
   const [nationalityFilter, setNationalityFilter] = useState('')
   const [availabilityFilter, setAvailabilityFilter] = useState('')
   const [legalFilter, setLegalFilter] = useState('')
+
+
 
   useEffect(() => { fetchCandidates() }, [])
 
@@ -95,7 +104,7 @@ export default function CandidatesPage() {
     },
     {
       accessorKey: 'full_name',
-      header: 'Ad Soyad',
+      header: L.fullName,
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           {row.original.blacklist && <AlertCircle size={13} color="#EF4444" />}
@@ -110,16 +119,16 @@ export default function CandidatesPage() {
     {
       id: 'nationality',
       accessorFn: row => row.nationality ?? '',
-      header: 'Uyruk / Din',
+      header: L.religion,
       filterFn: 'equals',
       cell: ({ row }) => (
         <div>
           <p className="text-sm" style={{ color: '#4A4A4A' }}>
-            {row.original.nationality?.split('/')[0].trim() || '-'}
+            {showName(row.original.nationality, lookups.nationalities, lang)}
           </p>
           {row.original.origin_city && (
             <p className="text-xs" style={{ color: '#245bbb' }}>
-              {row.original.origin_city}
+              {showName(row.original.origin_city, lookups.cities, lang)}
             </p>
           )}
 
@@ -128,16 +137,15 @@ export default function CandidatesPage() {
     },
     {
       id: 'location',
-      header: 'Konum',
+      header: L.location,
       cell: ({ row }) => (
         <div>
           <p className="text-sm" style={{ color: '#4A4A4A' }}>
-            {[row.original.current_country?.split('/')[0].trim(), row.original.current_city]
-              .filter(Boolean).join(', ') || '-'}
+            {showName(row.original.current_country, lookups.countries, lang)}
           </p>
           {row.original.religion && (
             <p className="text-xs" style={{ color: '#9CA3AF' }}>
-              {row.original.religion.split('/')[0].trim()}
+              {showName(row.original.religion, lookups.religions, lang)}
             </p>
           )}
         </div>
@@ -145,30 +153,30 @@ export default function CandidatesPage() {
     },
     {
       accessorKey: 'skills',
-      header: 'Hizmet',
+      header: L.features,
       cell: ({ getValue }) => {
         const skills = getValue() as string[]
         if (!skills?.length) return <span className="text-gray-400">-</span>
         return (
           <p className="text-xs" style={{ color: '#4A4A4A', maxWidth: '150px', lineHeight: '1.5' }}>
-            {skills.map(s => s.split('/')[0].trim()).join(', ')}
+            {skills.map(s => showName(s, lookups.services, lang)).join(', ')}
           </p>
         )
       },
     },
     {
       accessorKey: 'legal_status',
-      header: 'Yasal',
+      header: L.legal,
       cell: ({ getValue }) => (
         <span className="text-xs" style={{ color: '#4A4A4A' }}>
-          {String(getValue() ?? '').split('/')[0].trim() || '-'}
+          {showName(String(getValue() ?? ''), lookups.legalStatus, lang) || '-'}
         </span>
       ),
       filterFn: 'equals',
     },
     {
       accessorKey: 'availability',
-      header: 'Durum',
+      header: L.status,
       cell: ({ row }) => {
         const val = row.original.availability ?? ''
         const found = lookups.availability.find(a => a.name === val)
@@ -176,7 +184,7 @@ export default function CandidatesPage() {
         return val ? (
           <span className="px-2 py-1 rounded-full text-xs font-medium text-white"
             style={{ background: color }}>
-            {val.split('/')[0].trim()}
+            {showName(val, lookups.availability, lang)}
           </span>
         ) : <span className="text-gray-400">-</span>
       },
@@ -184,7 +192,7 @@ export default function CandidatesPage() {
     },
     {
       accessorKey: 'expected_salary',
-      header: 'Maaş',
+      header: L.expectedSalary,
       cell: ({ row }) => (
         <span className="text-sm" style={{ color: '#4A4A4A' }}>
           {row.original.expected_salary ? `${Number(row.original.expected_salary).toLocaleString('tr-TR')} ${row.original.salary_currency}` : '—'}
@@ -193,7 +201,7 @@ export default function CandidatesPage() {
     },
     {
       id: 'traits',
-      header: 'Özellik',
+      header: L.features,
       cell: ({ row }) => (
         <div className="flex gap-1.5 items-center">
           <Waves size={14} color={row.original.can_swim ? '#3B82F6' : '#E5E7EB'} />
@@ -206,7 +214,7 @@ export default function CandidatesPage() {
     },
     {
       accessorKey: 'rank',
-      header: 'Rank',
+      header: L.rank,
       cell: ({ getValue }) => (
         <div className="flex gap-0.5">
           {[1, 2, 3, 4, 5].map(i => (
@@ -219,7 +227,7 @@ export default function CandidatesPage() {
     },
     {
       accessorKey: 'created_at',
-      header: 'Eklenme',
+      header: L.added,
       cell: ({ getValue }) => (
         <div>
           <p className="text-xs" style={{ color: '#9CA3AF' }}>
@@ -286,7 +294,7 @@ export default function CandidatesPage() {
       ),
     },
 
-  ], [lookups])
+  ], [lookups, lang])
 
   const table = useReactTable({
     data: candidates,
@@ -310,14 +318,14 @@ export default function CandidatesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-bold" style={{ color: '#4A4A4A' }}>Adaylar</h2>
-          <p className="text-sm text-gray-500 mt-0.5">{candidates.length} aday kayıtlı</p>
+          <h2 className="text-xl font-bold" style={{ color: '#4A4A4A' }}>{L.title}</h2>
+          <p className="text-sm text-gray-500 mt-0.5">{candidates.length} {L.subtitle}</p>
         </div>
         <button
           onClick={() => { setEditingCandidate(null); setShowModal(true) }}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-medium hover:opacity-90"
           style={{ background: '#E8673A' }}>
-          <Plus size={16} /> Yeni Aday
+          <Plus size={16} /> {L.addNew}
         </button>
       </div>
 
@@ -327,7 +335,7 @@ export default function CandidatesPage() {
           <input
             value={globalFilter}
             onChange={e => setGlobalFilter(e.target.value)}
-            placeholder="İsim veya telefon ara..."
+            placeholder={L.search}
             className="w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none"
             style={{ background: '#F7F6FB', border: '1px solid #ede9e3', color: '#4A4A4A' }}
           />
@@ -340,8 +348,10 @@ export default function CandidatesPage() {
           }}
           className="px-3 py-2 rounded-lg text-sm outline-none"
           style={{ background: '#F7F6FB', border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-          <option value="">Tüm Uyruklar</option>
-          {lookups.nationalities.map(n => <option key={n.id} value={n.name}>{n.name.split('/')[0].trim()}</option>)}
+          <option value="">{L.allNationalities}</option>
+          {lookups.nationalities.map(n => (
+            <option key={n.id} value={n.name}>{showName(n.name, lookups.nationalities, lang)}</option>
+          ))}
         </select>
         <select
           value={availabilityFilter}
@@ -351,8 +361,10 @@ export default function CandidatesPage() {
           }}
           className="px-3 py-2 rounded-lg text-sm outline-none"
           style={{ background: '#F7F6FB', border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-          <option value="">Tüm Durumlar</option>
-          {lookups.availability.map(a => <option key={a.id} value={a.name}>{a.name.split('/')[0].trim()}</option>)}
+          <option value="">{L.allStatuses}</option>
+          {lookups.availability.map(a => (
+            <option key={a.id} value={a.name}>{showName(a.name, lookups.availability, lang)}</option>
+          ))}
         </select>
         <select
           value={legalFilter}
@@ -362,8 +374,10 @@ export default function CandidatesPage() {
           }}
           className="px-3 py-2 rounded-lg text-sm outline-none"
           style={{ background: '#F7F6FB', border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-          <option value="">Tüm Yasal Durumlar</option>
-          {lookups.legalStatus.map(l => <option key={l.id} value={l.name}>{l.name.split('/')[0].trim()}</option>)}
+          <option value="">{L.allLegal}</option>
+          {lookups.legalStatus.map(l => (
+            <option key={l.id} value={l.name}>{showName(l.name, lookups.legalStatus, lang)}</option>
+          ))}
         </select>
         {(globalFilter || columnFilters.length > 0) && (
           <button onClick={() => {
@@ -374,7 +388,7 @@ export default function CandidatesPage() {
             setLegalFilter('')
           }}
             className="px-3 py-2 rounded-lg text-sm" style={{ color: '#E8673A' }}>
-            Tümü
+            {L.clear}
           </button>
         )}
       </div>
@@ -382,19 +396,19 @@ export default function CandidatesPage() {
       <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1px solid #ede9e3' }}>
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="p-12 text-center text-gray-400">Yükleniyor...</div>
+            <div className="p-12 text-center text-gray-400">{labels.loading}</div>
           ) : (
             <>
               <table className="w-full">
                 <thead>
                   {table.getHeaderGroups().map(hg => (
-                    <tr key={hg.id} style={{ background: '#F7F6FB', borderBottom: '1px solid #ede9e3' }}>
+                    <tr key={hg.id} style={{ background: '#d7f5ee', borderBottom: '1px solid #ede9e3' }}>
                       {hg.headers.map(header => (
                         <th key={header.id} className="text-left px-4 py-3">
                           {header.isPlaceholder ? null : (
                             <div
-                              className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-wide select-none ${header.column.getCanSort() ? 'cursor-pointer' : ''}`}
-                              style={{ color: '#9CA3AF' }}
+                              className={`flex items-center gap-1 text-xs font-semibold tracking-wide select-none ${header.column.getCanSort() ? 'cursor-pointer' : ''}`}
+                              style={{ color: '#61473d' }}
                               onClick={header.column.getToggleSortingHandler()}>
                               {flexRender(header.column.columnDef.header, header.getContext())}
                               {header.column.getCanSort() && (
@@ -413,7 +427,7 @@ export default function CandidatesPage() {
                   {table.getRowModel().rows.length === 0 ? (
                     <tr>
                       <td colSpan={columns.length} className="p-12 text-center text-gray-400">
-                        Aday bulunamadı.
+                        {L.notFound}
                       </td>
                     </tr>
                   ) : (
@@ -435,7 +449,7 @@ export default function CandidatesPage() {
 
               <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid #ede9e3' }}>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">Sayfa başı:</span>
+                  <span className="text-xs text-gray-500">{labels.pageSize}:</span>
                   <select
                     value={table.getState().pagination.pageSize}
                     onChange={e => table.setPageSize(Number(e.target.value))}
@@ -443,7 +457,7 @@ export default function CandidatesPage() {
                     style={{ background: '#F7F6FB', border: '1px solid #ede9e3', color: '#4A4A4A' }}>
                     {[10, 25, 50].map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
-                  <span className="text-xs text-gray-500">{table.getFilteredRowModel().rows.length} sonuç</span>
+                  <span className="text-xs text-gray-500">{table.getFilteredRowModel().rows.length} {labels.results}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-500">
@@ -483,6 +497,12 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
   onSave: () => void
 }) {
   const supabase = createClient()
+
+  const { lang } = useLang()
+  const labels = getLabels(lang)
+  const L = { ...labels, ...labels.candidates }
+
+
   const [form, setForm] = useState({
     full_name: candidate?.full_name ?? '',
     phone: candidate?.phone ?? '',
@@ -548,16 +568,14 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
   }
 
   const traits = [
-    { field: 'can_swim', trueLabel: 'Yüzme Biliyor', falseLabel: 'Yüzme Bilmiyor', icon: Waves },
-    { field: 'smokes', trueLabel: 'Sigara İçiyor', falseLabel: 'Sigara İçmiyor', icon: Cigarette },
-    { field: 'drinks', trueLabel: 'Alkol Kullanıyor', falseLabel: 'Alkol Kullanmıyor', icon: Wine },
-    { field: 'tattoo', trueLabel: 'Tattoo Var', falseLabel: 'Tattoo Yok', icon: Sparkles },
-    { field: 'married', trueLabel: 'Evli', falseLabel: 'Bekar', icon: Star },
-    { field: 'blacklist', trueLabel: 'Kara Liste', falseLabel: 'Kara Liste Değil', icon: AlertCircle },
-    { field: 'pet_ok', trueLabel: 'Evcil Hayvan OK', falseLabel: 'Evcil Hayvan İSTEMİYOR', icon: PawPrint },
+    { field: 'can_swim', trueLabel: L.canSwim, falseLabel: L.cannotSwim, icon: Waves },
+    { field: 'smokes', trueLabel: L.smokes, falseLabel: L.notSmokes, icon: Cigarette },
+    { field: 'drinks', trueLabel: L.drinks, falseLabel: L.notDrinks, icon: Wine },
+    { field: 'tattoo', trueLabel: L.hasTattoo, falseLabel: L.noTattoo, icon: Sparkles },
+    { field: 'married', trueLabel: L.married, falseLabel: L.single, icon: Star },
+    { field: 'blacklist', trueLabel: L.blacklist, falseLabel: L.notBlacklist, icon: AlertCircle },
+    { field: 'pet_ok', trueLabel: L.petOk, falseLabel: L.petNotOk, icon: PawPrint },
   ]
-
-
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -569,7 +587,7 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
         <div className="flex items-center justify-between p-6 flex-shrink-0"
           style={{ borderBottom: '1px solid #ede9e3' }}>
           <h3 className="font-bold text-lg" style={{ color: '#4A4A4A' }}>
-            {candidate ? 'Adayı Düzenle' : 'Yeni Aday'}
+            {candidate ? L.editTitle : L.newTitle}
           </h3>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
             <X size={18} color="#9CA3AF" />
@@ -583,20 +601,20 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
             <div>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Ad Soyad *</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{L.fullName} *</label>
                   <input value={form.full_name} onChange={e => set('full_name', e.target.value)}
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                     style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Telefon</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">{L.phone}</label>
                     <input value={form.phone} onChange={e => set('phone', e.target.value)}
                       className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                       style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">E-posta</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">{L.email}</label>
                     <input value={form.email} onChange={e => set('email', e.target.value)}
                       className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                       style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
@@ -609,76 +627,88 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
             <div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Uyruk</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{L.nationality}</label>
                   <select value={form.nationality} onChange={e => set('nationality', e.target.value)}
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                     style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                    <option value="">Seçiniz</option>
-                    {lookups.nationalities.map(n => <option key={n.id} value={n.name}>{n.name}</option>)}
+                    <option value="">{labels.select}</option>
+                    {lookups.nationalities.map(n => (
+                      <option key={n.id} value={n.name}>{showName(n.name, lookups.nationalities, lang)}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Memleket Şehri</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{L.originCity}</label>
                   <input value={form.origin_city} onChange={e => set('origin_city', e.target.value)}
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                     style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Yasal Durum</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{L.legalStatus}</label>
                   <select value={form.legal_status} onChange={e => set('legal_status', e.target.value)}
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                     style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                    <option value="">Seçiniz</option>
-                    {lookups.legalStatus.map(l => <option key={l.id} value={l.name}>{l.name}</option>)}
+                    <option value="">{labels.select}</option>
+                    {lookups.legalStatus.map(l => (
+                      <option key={l.id} value={l.name}>{showName(l.name, lookups.legalStatus, lang)}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Bulunduğu Ülke</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{L.currentCountry}</label>
                   <select value={form.current_country} onChange={e => set('current_country', e.target.value)}
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                     style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                    <option value="">Seçiniz</option>
-                    {lookups.countries.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    <option value="">{labels.select}</option>
+                    {lookups.countries.map(c => (
+                      <option key={c.id} value={c.name}>{showName(c.name, lookups.countries, lang)}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Bulunduğu Şehir</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{L.currentCity}</label>
                   <input value={form.current_city} onChange={e => set('current_city', e.target.value)}
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                     style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Din</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{L.religion}</label>
                   <select value={form.religion} onChange={e => set('religion', e.target.value)}
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                     style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                    <option value="">Seçiniz</option>
-                    {lookups.religions.map(r => <option key={r.id} value={r.name}>{r.name.split('/')[0].trim()}</option>)}
+                    <option value="">{labels.select}</option>
+                    {lookups.religions.map(r => (
+                      <option key={r.id} value={r.name}>{showName(r.name, lookups.religions, lang)}</option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Çalışma Şekli</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{L.workType}</label>
                   <select value={form.work_type} onChange={e => set('work_type', e.target.value)}
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                     style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                    <option value="">Seçiniz</option>
-                    {lookups.workTypes.map(w => <option key={w.id} value={w.name}>{w.name}</option>)}
+                    <option value="">{labels.select}</option>
+                    {lookups.workTypes.map(w => (
+                      <option key={w.id} value={w.name}>{showName(w.name, lookups.workTypes, lang)}</option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Durum</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{L.status}</label>
                   <select value={form.availability} onChange={e => set('availability', e.target.value)}
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                     style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                    <option value="">Seçiniz</option>
-                    {lookups.availability.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
+                    <option value="">{labels.select}</option>
+                    {lookups.availability.map(a => (
+                      <option key={a.id} value={a.name}>{showName(a.name, lookups.availability, lang)}</option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Çocuk Sayısı</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{L.numChildren}</label>
                   <input type="number" min={0} value={form.num_children}
                     onChange={e => set('num_children', Number(e.target.value))}
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none"
@@ -694,7 +724,7 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
 
                 {/* Hizmetler */}
                 <div>
-                  <label className="block text-xs font-medium tracking-wide mb-2" style={{ color: '#eb7a2e' }}>Hizmetler</label>
+                  <label className="block text-xs font-medium tracking-wide mb-2" style={{ color: '#eb7a2e' }}>{L.services}</label>
                   <div className="flex flex-wrap gap-2">
                     {lookups.services.map(s => {
                       const checked = form.skills.includes(s.name)
@@ -707,7 +737,7 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
                             color: checked ? '#fff' : '#4A4A4A',
                             border: `1px solid ${checked ? '#E8673A' : '#ede9e3'}`
                           }}>
-                          {s.name.split('/')[0].trim()}
+                          {showName(s.name, lookups.services, lang)}
                         </button>
                       )
                     })}
@@ -716,7 +746,7 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
 
                 {/* Diller */}
                 <div>
-                  <label className="block text-xs font-medium mb-2" style={{ color: '#eb7a2e' }}>Bildiği Diller</label>
+                  <label className="block text-xs font-medium mb-2" style={{ color: '#eb7a2e' }}>{L.languages}</label>
                   <div className="flex flex-wrap gap-2">
                     {lookups.languages.map(l => {
                       const checked = form.languages.includes(l.name)
@@ -729,7 +759,7 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
                             color: checked ? '#fff' : '#4A4A4A',
                             border: `1px solid ${checked ? '#3B82F6' : '#ede9e3'}`
                           }}>
-                          {l.name.split('/')[0].trim()}
+                          {showName(l.name, lookups.languages, lang)}
                         </button>
                       )
                     })}
@@ -740,7 +770,7 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
 
                 <div className="grid grid-cols-3 gap-3 mt-2">
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Maaş Beklentisi</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">{L.expectedSalary}</label>
                     <div className="flex gap-1">
                       <input type="number" value={form.expected_salary}
                         onChange={e => set('expected_salary', e.target.value)}
@@ -754,14 +784,14 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Uygunluk Tarihi</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">{L.availableFrom}</label>
                     <input type="date" value={form.available_from}
                       onChange={e => set('available_from', e.target.value)}
                       className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                       style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Rank</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">{L.rank}</label>
                     <div className="flex gap-0.5 mt-1">
                       {[1, 2, 3, 4, 5].map(i => (
                         <button key={i} type="button" onClick={() => set('rank', i)}>
@@ -780,7 +810,7 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
 
             {/* Kişisel */}
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#9CA3AF' }}>Kişisel Bilgiler</p>
+              <p className="text-xs font-semibold tracking-wide mb-3" style={{ color: '#9CA3AF' }}>{L.personal}</p>
 
 
 
@@ -815,16 +845,16 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
 
             {/* Referans */}
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#9CA3AF' }}>Referans</p>
+              <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#9CA3AF' }}>{L.reference}</p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Referans Adı</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{L.referenceName}</label>
                   <input value={form.reference_name} onChange={e => set('reference_name', e.target.value)}
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                     style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Referans İletişim</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{L.referenceContact}</label>
                   <input value={form.reference_contact} onChange={e => set('reference_contact', e.target.value)}
                     placeholder="Telefon veya email"
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none"
@@ -835,13 +865,13 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
 
             {/* Linkler */}
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#9CA3AF' }}>Linkler</p>
+              <p className="text-xs font-semibold tracking-wide mb-3" style={{ color: '#9CA3AF' }}>{L.links}</p>
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">
                     <div className="flex items-center gap-1.5">
                       <FolderOpen size={12} />
-                      Belgeler (Drive / Video / Dropbox Link)
+                      {L.documents}
                     </div>
                   </label>
                   <input value={form.documents_url} onChange={e => set('documents_url', e.target.value)}
@@ -856,7 +886,7 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
             <div>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Ayrılma Sebebi</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{L.departureReason}</label>
                   <textarea value={form.reason_for_leaving}
                     onChange={e => set('reason_for_leaving', e.target.value)}
                     rows={2}
@@ -864,7 +894,7 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
                     style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Notlar</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{L.notes}</label>
                   <textarea value={form.notes} onChange={e => set('notes', e.target.value)}
                     rows={2}
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
@@ -881,12 +911,12 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
           <button onClick={onClose}
             className="flex-1 py-2 rounded-xl text-sm font-medium"
             style={{ background: '#F7F6FB', color: '#4A4A4A', border: '1px solid #ede9e3' }}>
-            İptal
+            {L.cancel}
           </button>
           <button onClick={handleSave} disabled={saving}
             className="flex-1 py-2 rounded-xl text-sm font-medium text-white hover:opacity-90"
             style={{ background: '#E8673A' }}>
-            {saving ? 'Kaydediliyor...' : 'Kaydet'}
+            {saving ? L.saving : L.save}
           </button>
         </div>
 
