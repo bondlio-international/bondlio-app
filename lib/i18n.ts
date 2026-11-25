@@ -569,7 +569,7 @@ const labelsEn: typeof labelsTr = {
         month1Short: '1M',
         month3Short: '3M',
         empShort: 'Emp',
-        canShort: 'Can',
+        canShort: 'Cnd',
         departure: 'Departure / Issue',
         replacementRequested: 'Replacement Requested',
         noReplacement: 'No Replacement Request',
