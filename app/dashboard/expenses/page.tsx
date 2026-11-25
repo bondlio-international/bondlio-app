@@ -3,6 +3,8 @@
 import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useLookups } from '@/lib/useLookups'
+import { useLang } from '@/lib/LangContext'
+import { getLabels } from '@/lib/i18n'
 import {
   useReactTable,
   getCoreRowModel,
@@ -36,6 +38,10 @@ type Expense = {
 export default function ExpensesPage() {
   const supabase = createClient()
   const { lookups } = useLookups()
+  const { lang } = useLang()
+  const labels = getLabels(lang)
+  const L = { ...labels, ...labels.expenses }
+
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [agents, setAgents] = useState<{ id: number; full_name: string }[]>([])
   const [loading, setLoading] = useState(true)
@@ -60,31 +66,33 @@ export default function ExpensesPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Bu gideri silmek istediğinizden emin misiniz?')) return
+    if (!confirm(L.deleteConfirm)) return
     await supabase.from('expenses').delete().eq('id', id)
     fetchAll()
   }
 
+  const locale = lang === 'en' ? 'en-GB' : 'tr-TR'
+
   const columns = useMemo<ColumnDef<Expense>[]>(() => [
     {
       accessorKey: 'id',
-      header: 'ID',
+      header: L.id,
       cell: ({ getValue }) => (
         <span className="text-xs font-mono" style={{ color: '#9CA3AF' }}>#{getValue() as number}</span>
       ),
     },
     {
       accessorKey: 'expense_date',
-      header: 'Tarih',
+      header: L.date,
       cell: ({ getValue }) => (
         <span className="text-xs" style={{ color: '#9CA3AF' }}>
-          {getValue() ? new Date(String(getValue())).toLocaleDateString('tr-TR') : '—'}
+          {getValue() ? new Date(String(getValue())).toLocaleDateString(locale) : '—'}
         </span>
       ),
     },
     {
       accessorKey: 'description',
-      header: 'Açıklama',
+      header: L.description,
       cell: ({ row }) => (
         <div>
           <p className="text-sm font-medium" style={{ color: '#4A4A4A' }}>{row.original.description || '—'}</p>
@@ -97,29 +105,31 @@ export default function ExpensesPage() {
     {
       id: 'category',
       accessorFn: row => row.category ?? '',
-      header: 'Kategori',
+      header: L.category,
       filterFn: 'equals',
-      cell: ({ getValue }) => (
-        <span className="text-sm" style={{ color: '#4A4A4A' }}>{String(getValue() ?? '') || '—'}</span>
-      ),
+      cell: ({ getValue }) => {
+        const val = String(getValue() ?? '')
+        const found = lookups.categories.find(c => c.name === val)
+        const label = lang === 'en' ? (found?.name_en || val) : val
+        return <span className="text-sm" style={{ color: '#4A4A4A' }}>{label || '—'}</span>
+      },
     },
     {
       accessorKey: 'amount',
-      header: 'Tutar',
+      header: L.amount,
       cell: ({ row }) => (
         <span className="text-sm font-medium" style={{ color: '#EF4444' }}>
-          {row.original.amount ? `${row.original.amount.toLocaleString('tr-TR')} ${row.original.currency}` : '—'}
+          {row.original.amount ? `${row.original.amount.toLocaleString(locale)} ${row.original.currency}` : '—'}
         </span>
       ),
     },
     {
       accessorKey: 'account',
-      header: 'Hesap',
+      header: L.account,
       cell: ({ getValue }) => (
         <span className="text-xs" style={{ color: '#9CA3AF' }}>{String(getValue() ?? '') || '—'}</span>
       ),
     },
-
     {
       id: 'actions',
       header: '',
@@ -153,7 +163,7 @@ export default function ExpensesPage() {
         </div>
       ),
     },
-  ], [lookups])
+  ], [lookups, lang])
 
   const table = useReactTable({
     data: expenses,
@@ -183,25 +193,24 @@ export default function ExpensesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-bold" style={{ color: '#4A4A4A' }}>Giderler</h2>
-          <p className="text-sm text-gray-500 mt-0.5">{expenses.length} gider kaydı</p>
+          <h2 className="text-xl font-bold" style={{ color: '#4A4A4A' }}>{L.title}</h2>
+          <p className="text-sm text-gray-500 mt-0.5">{expenses.length} {L.recordCount}</p>
         </div>
         <button
           onClick={() => { setEditingExpense(null); setShowModal(true) }}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-medium hover:opacity-90"
           style={{ background: '#E8673A' }}>
-          <Plus size={16} /> Yeni Gider
+          <Plus size={16} /> {L.newExpense}
         </button>
       </div>
 
-      {/* Özet kart */}
       <div className="bg-white rounded-2xl p-4 mb-4" style={{ border: '1px solid #ede9e3' }}>
         <div className="flex flex-wrap gap-6">
           {Object.entries(expenseSummary).map(([cur, total]) => (
             <div key={cur}>
-              <p className="text-xs text-gray-400 mb-1">Toplam Gider ({cur})</p>
+              <p className="text-xs text-gray-400 mb-1">{L.totalExpense} ({cur})</p>
               <p className="text-lg font-bold" style={{ color: '#EF4444' }}>
-                {total.toLocaleString('tr-TR')}
+                {total.toLocaleString(locale)}
               </p>
             </div>
           ))}
@@ -214,7 +223,7 @@ export default function ExpensesPage() {
           <input
             value={globalFilter}
             onChange={e => setGlobalFilter(e.target.value)}
-            placeholder="Ara..."
+            placeholder={L.searchPlaceholder}
             className="w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none"
             style={{ background: '#F7F6FB', border: '1px solid #ede9e3', color: '#4A4A4A' }}
           />
@@ -227,13 +236,17 @@ export default function ExpensesPage() {
           }}
           className="px-3 py-2 rounded-lg text-sm outline-none"
           style={{ background: '#F7F6FB', border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-          <option value="">Tüm Kategoriler</option>
-          {lookups.categories.map(c => <option key={c.id} value={c.name}>{c.name.split('/')[0].trim()}</option>)}
+          <option value="">{L.allCategories}</option>
+          {lookups.categories.map(c => (
+            <option key={c.id} value={c.name}>
+              {lang === 'en' ? (c.name_en || c.name).split('/')[0].trim() : c.name.split('/')[0].trim()}
+            </option>
+          ))}
         </select>
         {(globalFilter || columnFilters.length > 0) && (
           <button onClick={() => { setGlobalFilter(''); setColumnFilters([]); setCategoryFilter('') }}
             className="px-3 py-2 rounded-lg text-sm" style={{ color: '#E8673A' }}>
-            Temizle
+            {L.clear}
           </button>
         )}
       </div>
@@ -241,19 +254,19 @@ export default function ExpensesPage() {
       <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1px solid #ede9e3' }}>
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="p-12 text-center text-gray-400">Yükleniyor...</div>
+            <div className="p-12 text-center text-gray-400">{L.loading}</div>
           ) : (
             <>
               <table className="w-full">
                 <thead>
                   {table.getHeaderGroups().map(hg => (
-                    <tr key={hg.id} style={{ background: '#F7F6FB', borderBottom: '1px solid #ede9e3' }}>
+                    <tr key={hg.id} style={{ background: '#ffccd3', borderBottom: '1px solid #ede9e3' }}>
                       {hg.headers.map(header => (
                         <th key={header.id} className="text-left px-4 py-3">
                           {header.isPlaceholder ? null : (
                             <div
-                              className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-wide select-none ${header.column.getCanSort() ? 'cursor-pointer' : ''}`}
-                              style={{ color: '#9CA3AF' }}
+                              className={`flex items-center gap-1 text-xs font-semibold tracking-wide select-none ${header.column.getCanSort() ? 'cursor-pointer' : ''}`}
+                              style={{ color: '#252525' }}
                               onClick={header.column.getToggleSortingHandler()}>
                               {flexRender(header.column.columnDef.header, header.getContext())}
                               {header.column.getCanSort() && (
@@ -272,7 +285,7 @@ export default function ExpensesPage() {
                   {table.getRowModel().rows.length === 0 ? (
                     <tr>
                       <td colSpan={columns.length} className="p-12 text-center text-gray-400">
-                        Gider kaydı bulunamadı.
+                        {L.noResults}
                       </td>
                     </tr>
                   ) : (
@@ -294,7 +307,7 @@ export default function ExpensesPage() {
 
               <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid #ede9e3' }}>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">Sayfa başı:</span>
+                  <span className="text-xs text-gray-500">{L.perPage}:</span>
                   <select
                     value={table.getState().pagination.pageSize}
                     onChange={e => table.setPageSize(Number(e.target.value))}
@@ -302,7 +315,7 @@ export default function ExpensesPage() {
                     style={{ background: '#F7F6FB', border: '1px solid #ede9e3', color: '#4A4A4A' }}>
                     {[10, 25, 50].map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
-                  <span className="text-xs text-gray-500">{table.getFilteredRowModel().rows.length} sonuç</span>
+                  <span className="text-xs text-gray-500">{table.getFilteredRowModel().rows.length} {L.results}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-500">
@@ -328,6 +341,7 @@ export default function ExpensesPage() {
           expense={editingExpense}
           agents={agents}
           lookups={lookups}
+          lang={lang}
           onClose={() => setShowModal(false)}
           onSave={() => { setShowModal(false); fetchAll() }}
         />
@@ -336,14 +350,18 @@ export default function ExpensesPage() {
   )
 }
 
-function ExpenseModal({ expense, agents, lookups, onClose, onSave }: {
+function ExpenseModal({ expense, agents, lookups, lang, onClose, onSave }: {
   expense: Expense | null
   agents: { id: number; full_name: string }[]
   lookups: ReturnType<typeof useLookups>['lookups']
+  lang: string
   onClose: () => void
   onSave: () => void
 }) {
   const supabase = createClient()
+  const labels = getLabels(lang)
+  const L = { ...labels, ...labels.expenses }
+
   const [form, setForm] = useState({
     description: expense?.description ?? '',
     category: expense?.category ?? '',
@@ -367,10 +385,10 @@ function ExpenseModal({ expense, agents, lookups, onClose, onSave }: {
     }
     if (expense) {
       const { error } = await supabase.from('expenses').update(payload).eq('id', expense.id)
-      if (error) { alert('Hata: ' + error.message); setSaving(false); return }
+      if (error) { alert(L.errorPrefix + error.message); setSaving(false); return }
     } else {
       const { error } = await supabase.from('expenses').insert(payload)
-      if (error) { alert('Hata: ' + error.message); setSaving(false); return }
+      if (error) { alert(L.errorPrefix + error.message); setSaving(false); return }
     }
     setSaving(false)
     onSave()
@@ -385,7 +403,7 @@ function ExpenseModal({ expense, agents, lookups, onClose, onSave }: {
         <div className="flex items-center justify-between p-6 flex-shrink-0"
           style={{ borderBottom: '1px solid #ede9e3' }}>
           <h3 className="font-bold text-lg" style={{ color: '#4A4A4A' }}>
-            {expense ? 'Gideri Düzenle' : 'Yeni Gider'}
+            {expense ? L.editExpense : L.newExpense}
           </h3>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
             <X size={18} color="#9CA3AF" />
@@ -394,46 +412,47 @@ function ExpenseModal({ expense, agents, lookups, onClose, onSave }: {
 
         <div className="overflow-y-auto flex-1 p-6 space-y-4">
 
-          {/* Açıklama */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Açıklama</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">{L.description}</label>
             <input value={form.description} onChange={e => set('description', e.target.value)}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
               style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
           </div>
 
-          {/* Tarih & Kategori & Aracı */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Tarih</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.date}</label>
               <input type="date" value={form.expense_date} onChange={e => set('expense_date', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Kalem Türü</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.itemType}</label>
               <select value={form.category} onChange={e => set('category', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                <option value="">Seçiniz</option>
-                {lookups.categories.map(c => <option key={c.id} value={c.name}>{c.name.split('/')[0].trim()}</option>)}
+                <option value="">{L.select}</option>
+                {lookups.categories.map(c => (
+                  <option key={c.id} value={c.name}>
+                    {lang === 'en' ? (c.name_en || c.name).split('/')[0].trim() : c.name.split('/')[0].trim()}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Aracı</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.agent}</label>
               <select value={form.agent_id} onChange={e => set('agent_id', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                <option value="">Yok</option>
+                <option value="">{L.none}</option>
                 {agents.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}
               </select>
             </div>
           </div>
 
-          {/* Para Birimi & Tutar & Hesap */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Para Birimi</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.currency}</label>
               <select value={form.currency} onChange={e => set('currency', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
@@ -441,25 +460,24 @@ function ExpenseModal({ expense, agents, lookups, onClose, onSave }: {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Tutar</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.amount}</label>
               <input type="number" value={form.amount} onChange={e => set('amount', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Hesap</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.account}</label>
               <select value={form.account} onChange={e => set('account', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                <option value="">Seçiniz</option>
+                <option value="">{L.select}</option>
                 {lookups.accounts.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
               </select>
             </div>
           </div>
 
-          {/* Notlar */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Notlar</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">{L.notes}</label>
             <textarea value={form.notes} onChange={e => set('notes', e.target.value)}
               rows={2}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
@@ -472,12 +490,12 @@ function ExpenseModal({ expense, agents, lookups, onClose, onSave }: {
           <button onClick={onClose}
             className="flex-1 py-2 rounded-xl text-sm font-medium"
             style={{ background: '#F7F6FB', color: '#4A4A4A', border: '1px solid #ede9e3' }}>
-            İptal
+            {L.cancel}
           </button>
           <button onClick={handleSave} disabled={saving}
             className="flex-1 py-2 rounded-xl text-sm font-medium text-white hover:opacity-90"
             style={{ background: '#E8673A' }}>
-            {saving ? 'Kaydediliyor...' : 'Kaydet'}
+            {saving ? L.saving : L.save}
           </button>
         </div>
       </div>

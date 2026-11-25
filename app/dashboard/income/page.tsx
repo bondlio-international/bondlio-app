@@ -137,9 +137,12 @@ export default function IncomePage() {
     {
       accessorKey: 'category',
       header: L.category,
-      cell: ({ getValue }) => (
-        <span className="text-sm" style={{ color: '#4A4A4A' }}>{String(getValue() ?? '') || '—'}</span>
-      ),
+      cell: ({ getValue }) => {
+        const val = String(getValue() ?? '')
+        const found = lookups.categories.find(c => c.name === val)
+        const label = lang === 'en' ? (found?.name_en || val) : val
+        return <span className="text-sm" style={{ color: '#4A4A4A' }}>{label || '—'}</span>
+      },
     },
     {
       accessorKey: 'total_amount',
