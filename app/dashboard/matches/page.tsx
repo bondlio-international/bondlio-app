@@ -135,9 +135,10 @@ export default function MatchesPage() {
         const val = row.original.status ?? ''
         const found = lookups.matchStatus.find(s => s.name === val)
         const color = found?.color ?? '#6B7280'
+        const label = lang === 'en' ? (found?.name_en || val) : val
         return val ? (
           <span className="px-2 py-1 rounded-full text-xs font-medium text-white"
-            style={{ background: color }}>{val}</span>
+            style={{ background: color }}>{label}</span>
         ) : <span className="text-gray-400">-</span>
       },
     },
@@ -545,7 +546,11 @@ function MatchModal({ match, employers, candidates, agents, lookups, lang, onClo
               <select value={form.status} onChange={e => set('status', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                {lookups.matchStatus.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                {lookups.matchStatus.map(s => (
+                  <option key={s.id} value={s.name}>
+                    {lang === 'en' ? (s.name_en || s.name) : s.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
