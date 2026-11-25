@@ -22,17 +22,18 @@ import {
 import { LangProvider } from '@/lib/LangContext'
 import { useLang } from '@/lib/LangContext'
 
+
 const menuItems = [
-  { href: '/dashboard', label: 'Genel Bakış', icon: LayoutDashboard },
-  { href: '/dashboard/employers', label: 'İşverenler', icon: Building2 },
-  { href: '/dashboard/candidates', label: 'Adaylar', icon: Users },
-  { href: '/dashboard/agents', label: 'Aracılar', icon: Handshake },
-  { href: '/dashboard/requests', label: 'Talepler', icon: ClipboardList },
-  { href: '/dashboard/matches', label: 'Eşleşmeler', icon: Link2 },
-  { href: '/dashboard/income', label: 'Gelirler', icon: TrendingUp },
-  { href: '/dashboard/expenses', label: 'Giderler', icon: TrendingDown },
-  { href: '/dashboard/reports', label: 'Raporlar', icon: BarChart3 },
-  { href: '/dashboard/admin', icon: Settings, label: 'Admin' },
+  { href: '/dashboard', labelTr: 'Genel Bakış', labelEn: 'DashBoard', icon: LayoutDashboard },
+  { href: '/dashboard/employers', labelTr: 'İşverenler', labelEn: 'Employers', icon: Building2 },
+  { href: '/dashboard/candidates', labelTr: 'Adaylar', labelEn: 'Candidates', icon: Users },
+  { href: '/dashboard/agents', labelTr: 'Aracılar', labelEn: 'Agents', icon: Handshake },
+  { href: '/dashboard/requests', labelTr: 'Talepler', labelEn: 'Requests', icon: ClipboardList },
+  { href: '/dashboard/matches', labelTr: 'Eşleşmeler', labelEn: 'Matches', icon: Link2 },
+  { href: '/dashboard/income', labelTr: 'Gelirler', labelEn: 'Income', icon: TrendingUp },
+  { href: '/dashboard/expenses', labelTr: 'Giderler', labelEn: 'Expenses', icon: TrendingDown },
+  { href: '/dashboard/reports', labelTr: 'Raporlar', labelEn: 'Reports', icon: BarChart3 },
+  { href: '/dashboard/admin', labelTr: 'Admin', labelEn: 'Admin', icon: Settings },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -132,7 +133,9 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
               >
                 <Icon size={18} className="flex-shrink-0" />
                 {sidebarOpen && (
-                  <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
+                  <span className="text-sm font-medium whitespace-nowrap">
+                    {lang === 'tr' ? item.labelTr : item.labelEn}
+                  </span>
                 )}
               </Link>
             )
@@ -155,7 +158,9 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
             }}
           >
             <LogOut size={18} className="flex-shrink-0" />
-            {sidebarOpen && <span className="text-sm font-medium">Çıkış Yap</span>}
+            {sidebarOpen && <span className="text-sm font-medium">
+              {lang === 'tr' ? 'Çıkış Yap' : 'Log out'}
+            </span>}
           </button>
         </div>
       </aside>
@@ -176,8 +181,8 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
             {isMobile && sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
 
-          <h1 className="font-semibold text-sm flex-1 truncate" style={{ color: '#4A4A4A' }}>
-            {menuItems.find((m) => m.href === pathname)?.label ?? 'Bondlio'}
+          <h1 className="font-semibold text-sm flex-1 truncate" style={{ color: '#e78f29' }}>
+            Bondlio - {menuItems.find((m) => m.href === pathname)?.[lang === 'tr' ? 'labelTr' : 'labelEn'] ?? 'Bondlio'}
           </h1>
 
           <div className="flex items-center gap-1 p-1 rounded-lg flex-shrink-0"
