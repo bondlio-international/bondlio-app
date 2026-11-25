@@ -143,18 +143,22 @@ export default function RequestsPage() {
         const val = row.original.stage ?? ''
         const found = lookups.requestStages.find(s => s.name === val)
         const color = found?.color ?? '#6B7280'
+        const label = lang === 'en' ? (found?.name_en || val) : val
         return val ? (
-          <span className="px-2 py-1 rounded-full text-xs font-medium text-white"
-            style={{ background: color }}>{val}</span>
+          <span className="px-1 py-0.5 rounded-full text-xs font-medium text-white"
+            style={{ background: color }}>{label}</span>
         ) : <span className="text-gray-400">-</span>
       },
     },
     {
       accessorKey: 'city',
       header: L.city,
-      cell: ({ getValue }) => (
-        <span className="text-sm" style={{ color: '#4A4A4A' }}>{String(getValue() ?? '') || '-'}</span>
-      ),
+      cell: ({ getValue }) => {
+        const val = String(getValue() ?? '')
+        const found = lookups.cities?.find(c => c.name === val)
+        const label = lang === 'en' ? (found?.name_en || val) : val
+        return <span className="text-sm" style={{ color: '#4A4A4A' }}>{label || '-'}</span>
+      },
     },
     {
       accessorKey: 'max_salary',
@@ -648,7 +652,11 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
               <select value={form.stage} onChange={e => set('stage', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                {lookups.requestStages.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                {lookups.requestStages.map(s => (
+                  <option key={s.id} value={s.name}>
+                    {lang === 'en' ? (s.name_en || s.name) : s.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -668,7 +676,11 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
                 <option value="">{L.select}</option>
-                {lookups.cities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                {lookups.cities?.map(c => (
+                  <option key={c.id} value={c.name}>
+                    {lang === 'en' ? (c.name_en || c.name) : c.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -740,7 +752,7 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#E8673A' }}>{L.candidateCriteria}</p>
+            <p className="text-xs font-semibold tracking-wide mb-3" style={{ color: '#E8673A' }}>{L.candidateCriteria}</p>
 
             <div className="mb-3">
               <label className="block text-xs font-medium mb-2" style={{ color: '#eb8a67' }}>{L.nationalityPref}</label>

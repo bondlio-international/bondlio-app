@@ -127,7 +127,7 @@ export default function CandidatesPage() {
             {showName(row.original.nationality, lookups.nationalities, lang)}
           </p>
           {row.original.origin_city && (
-            <p className="text-xs" style={{ color: '#245bbb' }}>
+            <p className="text-xs" style={{ color: '#57b9b1' }}>
               {showName(row.original.origin_city, lookups.cities, lang)}
             </p>
           )}
@@ -144,7 +144,7 @@ export default function CandidatesPage() {
             {showName(row.original.current_country, lookups.countries, lang)}
           </p>
           {row.original.current_city && (
-            <p className="text-xs" style={{ color: '#9CA3AF' }}>
+            <p className="text-xs" style={{ color: '#bd6f5b' }}>
               {showName(row.original.current_city, lookups.cities, lang)}
             </p>
           )}
