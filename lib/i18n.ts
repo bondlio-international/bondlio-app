@@ -494,7 +494,7 @@ const labelsEn: typeof labelsTr = {
         conditions: 'Conditions',
         duties: 'Duties',
         followup: 'Follow-up',
-        desiredStart: 'Des. Start',
+        desiredStart: 'Desired Start',
         addedAt: 'Added',
         workType: 'Work Type',
         religionPref: 'Religion Pref.',
