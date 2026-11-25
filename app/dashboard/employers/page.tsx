@@ -165,7 +165,9 @@ export default function EmployersPage() {
     },
     {
       id: 'city',
+      accessorFn: row => row.city ?? '',
       header: L.city,
+      filterFn: 'equals',
       cell: ({ row }) => (
         <div>
           <p className="text-sm" style={{ color: '#4A4A4A' }}>
