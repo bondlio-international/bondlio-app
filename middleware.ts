@@ -33,10 +33,29 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Rol kontrolü
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_role')
+      .eq('id', user.id)
+      .single()
+
+    const role = profile?.user_role
+    const path = request.nextUrl.pathname
+
+    // Agent'lar bu sayfalara giremez
+    const adminOnly = ['/dashboard/income', '/dashboard/expenses', '/dashboard/admin']
+    if (role === 'agent' && adminOnly.some(p => path.startsWith(p))) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
+  }
+
   return supabaseResponse
 }
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|login|reports|.*\\.png|.*\\.jpg|.*\\.svg|.*\\.ico).*)'],
 }
-

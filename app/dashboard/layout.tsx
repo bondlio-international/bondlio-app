@@ -50,7 +50,24 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const { lang, toggleLang } = useLang()
+  const { lang, toggleLang, userRole } = useLang()
+
+  const [userName, setUserName] = useState('')
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single()
+        if (profile) setUserName(profile.full_name)
+      }
+    }
+    fetchUser()
+  }, [])
 
   useEffect(() => {
     const checkMobile = () => {
@@ -71,6 +88,13 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   const closeSidebar = () => {
     if (isMobile) setSidebarOpen(false)
   }
+
+  const visibleMenuItems = menuItems.filter(item => {
+    if (userRole === 'agent') {
+      return !['/dashboard/income', '/dashboard/expenses', '/dashboard/admin'].includes(item.href)
+    }
+    return true
+  })
 
   return (
     <div className="flex h-screen w-screen overflow-hidden" style={{ background: '#F7F6FB' }}>
@@ -108,8 +132,9 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
 
         {/* Menu */}
         <nav className="flex-1 py-4 overflow-y-auto">
-          {menuItems.map((item) => {
+          {visibleMenuItems.map((item) => {
             const isActive = pathname === item.href
+
             const Icon = item.icon
             return (
               <Link
@@ -182,7 +207,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
           </button>
 
           <h1 className="font-semibold text-sm flex-1 truncate" style={{ color: '#e78f29' }}>
-            Bondlio - {menuItems.find((m) => m.href === pathname)?.[lang === 'tr' ? 'labelTr' : 'labelEn'] ?? 'Bondlio'}
+            <span style={{ color: '#868686' }}>Bondlio User:</span> {userName || 'Bondlio'}
           </h1>
 
           <div className="flex items-center gap-1 p-1 rounded-lg flex-shrink-0"

@@ -3,6 +3,8 @@
 import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useLookups } from '@/lib/useLookups'
+import { useLang } from '@/lib/LangContext'
+import { showName, getLabels } from '@/lib/i18n'
 import {
   useReactTable,
   getCoreRowModel,
@@ -61,6 +63,10 @@ type Request = {
 export default function RequestsPage() {
   const supabase = createClient()
   const { lookups } = useLookups()
+  const { lang } = useLang()
+  const labels = getLabels(lang)
+  const L = { ...labels, ...labels.requests }
+
   const [requests, setRequests] = useState<Request[]>([])
   const [employers, setEmployers] = useState<{ id: number; full_name: string }[]>([])
   const [agents, setAgents] = useState<{ id: number; full_name: string }[]>([])
@@ -91,7 +97,7 @@ export default function RequestsPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Bu talebi silmek istediğinizden emin misiniz?')) return
+    if (!confirm(L.deleteConfirm)) return
     await supabase.from('requests').delete().eq('id', id)
     fetchAll()
   }
@@ -107,7 +113,7 @@ export default function RequestsPage() {
     {
       accessorFn: row => row.employers?.full_name ?? '',
       id: 'employer',
-      header: 'İşveren',
+      header: L.employer,
       cell: ({ row }) => (
         <div>
           <p className="text-sm font-medium" style={{ color: '#4A4A4A' }}>
@@ -121,17 +127,17 @@ export default function RequestsPage() {
     },
     {
       accessorKey: 'service',
-      header: 'Hizmet',
-      cell: ({ getValue }) => (
+      header: L.service,
+      cell: ({ row }) => (
         <span className="text-sm" style={{ color: '#4A4A4A' }}>
-          {String(getValue() ?? '').split('/')[0].trim() || '-'}
+          {showName(row.original.service, lookups.services, lang) || '-'}
         </span>
       ),
     },
     {
       id: 'stage',
       accessorFn: row => row.stage ?? '',
-      header: 'Aşama',
+      header: L.stage,
       filterFn: 'equals',
       cell: ({ row }) => {
         const val = row.original.stage ?? ''
@@ -145,33 +151,37 @@ export default function RequestsPage() {
     },
     {
       accessorKey: 'city',
-      header: 'Şehir',
+      header: L.city,
       cell: ({ getValue }) => (
         <span className="text-sm" style={{ color: '#4A4A4A' }}>{String(getValue() ?? '') || '-'}</span>
       ),
     },
     {
       accessorKey: 'max_salary',
-      header: 'Maks Maaş',
+      header: L.maxSalary,
       cell: ({ row }) => (
         <span className="text-sm" style={{ color: '#4A4A4A' }}>
-          {row.original.max_salary ? `${Number(row.original.max_salary).toLocaleString('tr-TR')} ${row.original.salary_currency}` : '—'}
+          {row.original.max_salary ? `${Number(row.original.max_salary).toLocaleString(lang === 'en' ? 'en-GB' : 'tr-TR')} ${row.original.salary_currency}` : '—'}
         </span>
       ),
     },
     {
       id: 'criteria',
-      header: 'Kriterler',
+      header: L.criteria,
       cell: ({ row }) => (
         <div>
           {row.original.desired_nationality?.length > 0 && (
             <p className="text-xs" style={{ color: '#4A4A4A' }}>
-              {row.original.desired_nationality.map((n: string) => n.split('/')[0].trim()).join(', ')}
+              {row.original.desired_nationality.map((n: string) =>
+                showName(n, lookups.nationalities, lang)
+              ).join(', ')}
             </p>
           )}
           {row.original.language_pref?.length > 0 && (
             <p className="text-xs" style={{ color: '#9CA3AF' }}>
-              {row.original.language_pref.map((l: string) => l.split('/')[0].trim()).join(', ')}
+              {row.original.language_pref.map((l: string) =>
+                showName(l, lookups.languages, lang)
+              ).join(', ')}
             </p>
           )}
         </div>
@@ -179,7 +189,7 @@ export default function RequestsPage() {
     },
     {
       id: 'kids',
-      header: 'Kişi',
+      header: L.person,
       cell: ({ row }) => (
         <div>
           {row.original.num_kids ? (
@@ -193,7 +203,7 @@ export default function RequestsPage() {
     },
     {
       id: 'suggested',
-      header: 'Önerilen',
+      header: L.suggested,
       cell: ({ row }) => {
         const suggested = [
           row.original.suggested_candidate_1,
@@ -217,7 +227,7 @@ export default function RequestsPage() {
     },
     {
       id: 'conditions',
-      header: 'Koşul',
+      header: L.conditions,
       cell: ({ row }) => (
         <div className="flex gap-1.5 items-center">
           <Cigarette size={14} color={!row.original.smoking_ok ? '#EF4444' : '#E5E7EB'} />
@@ -227,10 +237,9 @@ export default function RequestsPage() {
         </div>
       ),
     },
-
     {
       id: 'responsibilities',
-      header: 'Görev',
+      header: L.duties,
       cell: ({ row }) => {
         const resp = row.original.responsibilities
         if (!resp?.length) return <span style={{ color: '#E5E7EB' }}>—</span>
@@ -238,33 +247,31 @@ export default function RequestsPage() {
           <div>
             {resp.map((r: string, i: number) => (
               <span key={r} className="text-xs" style={{ color: '#4A4A4A' }}>
-                {r}{i < resp.length - 1 ? ', ' : ''}
+                {showName(r, lookups.responsibilities, lang)}{i < resp.length - 1 ? ', ' : ''}
               </span>
             ))}
           </div>
         )
       },
     },
-
     {
       id: 'followups',
-      header: 'Takip',
+      header: L.followup,
       cell: ({ row }) => {
         const dates = [row.original.followup_1, row.original.followup_2, row.original.followup_3].filter(Boolean)
         const alert = row.original.alert_date
-        const isClose = alert ? new Date(alert) <= new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) : false
         return (
           <div>
             {dates.length ? dates.map((d, i) => (
               <p key={i} className="text-xs" style={{ color: '#9CA3AF' }}>
-                {new Date(d!).toLocaleDateString('tr-TR')}
+                {new Date(d!).toLocaleDateString(lang === 'en' ? 'en-GB' : 'tr-TR')}
               </p>
             )) : <span style={{ color: '#E5E7EB' }}>—</span>}
             {alert && (
               <div className="flex items-center gap-1 mt-0.5">
                 <Bell size={11} color="#EF4444" />
                 <span className="text-xs" style={{ color: '#EF4444' }}>
-                  {new Date(alert).toLocaleDateString('tr-TR')}
+                  {new Date(alert).toLocaleDateString(lang === 'en' ? 'en-GB' : 'tr-TR')}
                 </span>
               </div>
             )}
@@ -274,25 +281,25 @@ export default function RequestsPage() {
     },
     {
       accessorKey: 'desired_start',
-      header: 'İst. Başlangıç',
+      header: L.desiredStart,
       cell: ({ getValue }) => (
         <div>
           <p className="text-xs" style={{ color: '#9CA3AF' }}>
-            {getValue() ? new Date(String(getValue())).toLocaleDateString('tr-TR') : '—'}
+            {getValue() ? new Date(String(getValue())).toLocaleDateString(lang === 'en' ? 'en-GB' : 'tr-TR') : '—'}
           </p>
         </div>
       ),
     },
     {
       accessorKey: 'created_at',
-      header: 'Eklenme',
+      header: L.addedAt,
       cell: ({ getValue }) => (
         <div>
           <p className="text-xs" style={{ color: '#9CA3AF' }}>
-            {getValue() ? new Date(String(getValue())).toLocaleDateString('tr-TR') : '-'}
+            {getValue() ? new Date(String(getValue())).toLocaleDateString(lang === 'en' ? 'en-GB' : 'tr-TR') : '-'}
           </p>
           <p className="text-xs" style={{ color: '#C4C4C4' }}>
-            {getValue() ? new Date(String(getValue())).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''}
+            {getValue() ? new Date(String(getValue())).toLocaleTimeString(lang === 'en' ? 'en-GB' : 'tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''}
           </p>
         </div>
       ),
@@ -304,7 +311,7 @@ export default function RequestsPage() {
         <div className="flex gap-1 justify-end items-center">
           <div className="w-2.5 h-2.5 rounded-full mr-1"
             style={{ background: row.original.is_active ? '#10B981' : '#D1D5DB' }}
-            title={row.original.is_active ? 'Aktif' : 'Pasif'}
+            title={row.original.is_active ? L.active : L.passive}
           />
           {row.original.notes ? (
             <div className="relative group">
@@ -334,7 +341,7 @@ export default function RequestsPage() {
         </div>
       ),
     },
-  ], [lookups, candidates])
+  ], [lookups, candidates, lang])
 
   const table = useReactTable({
     data: requests,
@@ -354,14 +361,14 @@ export default function RequestsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-bold" style={{ color: '#4A4A4A' }}>Talepler</h2>
-          <p className="text-sm text-gray-500 mt-0.5">{requests.length} talep.</p>
+          <h2 className="text-xl font-bold" style={{ color: '#4A4A4A' }}>{L.title}</h2>
+          <p className="text-sm text-gray-500 mt-0.5">{requests.length} {L.recordCount}</p>
         </div>
         <button
           onClick={() => { setEditingRequest(null); setShowModal(true) }}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-medium hover:opacity-90"
           style={{ background: '#E8673A' }}>
-          <Plus size={16} /> Yeni Talep
+          <Plus size={16} /> {L.newRequest}
         </button>
       </div>
 
@@ -371,7 +378,7 @@ export default function RequestsPage() {
           <input
             value={globalFilter}
             onChange={e => setGlobalFilter(e.target.value)}
-            placeholder="İşveren ara..."
+            placeholder={L.searchPlaceholder}
             className="w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none"
             style={{ background: '#F7F6FB', border: '1px solid #ede9e3', color: '#4A4A4A' }}
           />
@@ -384,13 +391,13 @@ export default function RequestsPage() {
           }}
           className="px-3 py-2 rounded-lg text-sm outline-none"
           style={{ background: '#F7F6FB', border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-          <option value="">Tüm Aşamalar</option>
+          <option value="">{L.allStages}</option>
           {lookups.requestStages.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
         </select>
         {(globalFilter || columnFilters.length > 0) && (
           <button onClick={() => { setGlobalFilter(''); setColumnFilters([]); setStageFilter('') }}
             className="px-3 py-2 rounded-lg text-sm" style={{ color: '#E8673A' }}>
-            Temizle
+            {L.clear}
           </button>
         )}
       </div>
@@ -398,19 +405,19 @@ export default function RequestsPage() {
       <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1px solid #ede9e3' }}>
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="p-12 text-center text-gray-400">Yükleniyor...</div>
+            <div className="p-12 text-center text-gray-400">{L.loading}</div>
           ) : (
             <>
               <table className="w-full">
                 <thead>
                   {table.getHeaderGroups().map(hg => (
-                    <tr key={hg.id} style={{ background: '#F7F6FB', borderBottom: '1px solid #ede9e3' }}>
+                    <tr key={hg.id} style={{ background: '#e5fad3', borderBottom: '1px solid #ede9e3' }}>
                       {hg.headers.map(header => (
                         <th key={header.id} className="text-left px-4 py-3">
                           {header.isPlaceholder ? null : (
                             <div
-                              className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-wide select-none ${header.column.getCanSort() ? 'cursor-pointer' : ''}`}
-                              style={{ color: '#9CA3AF' }}
+                              className={`flex items-center gap-1 text-xs font-semibold tracking-wide select-none ${header.column.getCanSort() ? 'cursor-pointer' : ''}`}
+                              style={{ color: '#373737' }}
                               onClick={header.column.getToggleSortingHandler()}>
                               {flexRender(header.column.columnDef.header, header.getContext())}
                               {header.column.getCanSort() && (
@@ -429,7 +436,7 @@ export default function RequestsPage() {
                   {table.getRowModel().rows.length === 0 ? (
                     <tr>
                       <td colSpan={columns.length} className="p-12 text-center text-gray-400">
-                        Talep bulunamadı.
+                        {L.notFound}
                       </td>
                     </tr>
                   ) : (
@@ -451,7 +458,7 @@ export default function RequestsPage() {
 
               <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid #ede9e3' }}>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">Sayfa başı:</span>
+                  <span className="text-xs text-gray-500">{L.pageSize}:</span>
                   <select
                     value={table.getState().pagination.pageSize}
                     onChange={e => table.setPageSize(Number(e.target.value))}
@@ -459,7 +466,7 @@ export default function RequestsPage() {
                     style={{ background: '#F7F6FB', border: '1px solid #ede9e3', color: '#4A4A4A' }}>
                     {[10, 25, 50].map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
-                  <span className="text-xs text-gray-500">{table.getFilteredRowModel().rows.length} sonuç</span>
+                  <span className="text-xs text-gray-500">{table.getFilteredRowModel().rows.length} {L.results}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-500">
@@ -487,6 +494,7 @@ export default function RequestsPage() {
           agents={agents}
           candidates={candidates}
           lookups={lookups}
+          lang={lang}
           onClose={() => setShowModal(false)}
           onSave={() => { setShowModal(false); fetchAll() }}
         />
@@ -495,16 +503,20 @@ export default function RequestsPage() {
   )
 }
 
-function RequestModal({ request, employers, agents, candidates, lookups, onClose, onSave }: {
+function RequestModal({ request, employers, agents, candidates, lookups, lang, onClose, onSave }: {
   request: Request | null
   employers: { id: number; full_name: string }[]
   agents: { id: number; full_name: string }[]
   candidates: { id: number; full_name: string }[]
   lookups: ReturnType<typeof useLookups>['lookups']
+  lang: string
   onClose: () => void
   onSave: () => void
 }) {
   const supabase = createClient()
+  const labels = getLabels(lang)
+  const L = { ...labels, ...labels.requests }
+
   const [form, setForm] = useState({
     employer_id: request?.employer_id ?? '',
     agent_id: request?.agent_id ?? '',
@@ -552,7 +564,7 @@ function RequestModal({ request, employers, agents, candidates, lookups, onClose
   }
 
   const handleSave = async () => {
-    if (!form.employer_id) return alert('İşveren seçilmesi zorunludur.')
+    if (!form.employer_id) return alert(L.employerRequired)
     setSaving(true)
     const payload = {
       ...form,
@@ -574,14 +586,22 @@ function RequestModal({ request, employers, agents, candidates, lookups, onClose
     }
     if (request) {
       const { error } = await supabase.from('requests').update(payload).eq('id', request.id)
-      if (error) { alert('Hata: ' + error.message); setSaving(false); return }
+      if (error) { alert(L.errorPrefix + error.message); setSaving(false); return }
     } else {
       const { error } = await supabase.from('requests').insert(payload)
-      if (error) { alert('Hata: ' + error.message); setSaving(false); return }
+      if (error) { alert(L.errorPrefix + error.message); setSaving(false); return }
     }
     setSaving(false)
     onSave()
   }
+
+  const toggleTraits = [
+    { field: 'legal_required', trueLabel: L.legalRequired, falseLabel: L.legalNotRequired },
+    { field: 'smoking_ok', trueLabel: L.smokingOk, falseLabel: L.smokingNotOk },
+    { field: 'drinking_ok', trueLabel: L.drinkingOk, falseLabel: L.drinkingNotOk },
+    { field: 'has_pet', trueLabel: L.hasPet, falseLabel: L.noPet },
+    { field: 'private_room', trueLabel: L.privateRoom, falseLabel: L.noPrivateRoom },
+  ]
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -592,7 +612,7 @@ function RequestModal({ request, employers, agents, candidates, lookups, onClose
         <div className="flex items-center justify-between p-6 flex-shrink-0"
           style={{ borderBottom: '1px solid #ede9e3' }}>
           <h3 className="font-bold text-lg" style={{ color: '#4A4A4A' }}>
-            {request ? 'Talebi Düzenle' : 'Yeni Talep'}
+            {request ? L.editRequest : L.newRequest}
           </h3>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
             <X size={18} color="#9CA3AF" />
@@ -601,32 +621,30 @@ function RequestModal({ request, employers, agents, candidates, lookups, onClose
 
         <div className="overflow-y-auto flex-1 p-6 space-y-5">
 
-          {/* İşveren & Aracı */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">İşveren *</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.employer} *</label>
               <select value={form.employer_id} onChange={e => set('employer_id', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                <option value="">Seçiniz</option>
+                <option value="">{L.select}</option>
                 {employers.map(e => <option key={e.id} value={e.id}>{e.full_name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Aracı</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.agent}</label>
               <select value={form.agent_id} onChange={e => set('agent_id', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                <option value="">Seçiniz</option>
+                <option value="">{L.select}</option>
                 {agents.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}
               </select>
             </div>
           </div>
 
-          {/* Aşama & Hizmet & Şehir */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Aşama</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.stage}</label>
               <select value={form.stage} onChange={e => set('stage', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
@@ -634,45 +652,46 @@ function RequestModal({ request, employers, agents, candidates, lookups, onClose
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Hizmet</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.service}</label>
               <select value={form.service} onChange={e => set('service', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                <option value="">Seçiniz</option>
-                {lookups.services.map(s => <option key={s.id} value={s.name}>{s.name.split('/')[0].trim()}</option>)}
+                <option value="">{L.select}</option>
+                {lookups.services.map(s => (
+                  <option key={s.id} value={s.name}>{showName(s.name, lookups.services, lang)}</option>
+                ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Şehir</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.city}</label>
               <select value={form.city} onChange={e => set('city', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                <option value="">Seçiniz</option>
+                <option value="">{L.select}</option>
                 {lookups.cities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
               </select>
             </div>
           </div>
 
-          {/* Çalışma & Maaş */}
           <div className="grid grid-cols-4 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Çalışma Şekli</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.workType}</label>
               <select value={form.work_type} onChange={e => set('work_type', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                <option value="">Seçiniz</option>
-                {lookups.workTypes.map(w => <option key={w.id} value={w.name}>{w.name}</option>)}
+                <option value="">{L.select}</option>
+                {lookups.workTypes.map(w => <option key={w.id} value={w.name}>{showName(w.name, lookups.workTypes, lang)}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Maksimum Maaş</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.maxSalary}</label>
               <input type="number" value={form.max_salary}
                 onChange={e => set('max_salary', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Para Birimi</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.currency}</label>
               <select value={form.salary_currency} onChange={e => set('salary_currency', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
@@ -680,37 +699,39 @@ function RequestModal({ request, employers, agents, candidates, lookups, onClose
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Din Tercihi</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.religionPref}</label>
               <select value={form.religion_pref} onChange={e => set('religion_pref', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                {lookups.religions.map(r => <option key={r.id} value={r.name}>{r.name.split('/')[0].trim()}</option>)}
+                <option value="">{L.select}</option>
+                {lookups.religions.map(r => (
+                  <option key={r.id} value={r.name}>{showName(r.name, lookups.religions, lang)}</option>
+                ))}
               </select>
             </div>
           </div>
 
-          {/* Yaş & Kişi Sayısı */}
           <div className="grid grid-cols-4 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Min Yaş</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.minAge}</label>
               <input type="number" value={form.min_age} onChange={e => set('min_age', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Max Yaş</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.maxAge}</label>
               <input type="number" value={form.max_age} onChange={e => set('max_age', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Bakılacak Kişi Sayısı</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.numKids}</label>
               <input type="number" value={form.num_kids} onChange={e => set('num_kids', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Yaşları</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.kidsAges}</label>
               <input value={form.kids_ages} onChange={e => set('kids_ages', e.target.value)}
                 placeholder="2, 5"
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
@@ -718,14 +739,11 @@ function RequestModal({ request, employers, agents, candidates, lookups, onClose
             </div>
           </div>
 
-
-          {/* Aday Kriterleri */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#E8673A' }}>Aday Kriterleri</p>
+            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#E8673A' }}>{L.candidateCriteria}</p>
 
-            {/* Uyruk */}
             <div className="mb-3">
-              <label className="block text-xs font-medium mb-2" style={{ color: '#eb8a67' }}>Uyruk Tercihi</label>
+              <label className="block text-xs font-medium mb-2" style={{ color: '#eb8a67' }}>{L.nationalityPref}</label>
               <div className="flex flex-wrap gap-2">
                 {lookups.nationalities.map(n => {
                   const checked = form.desired_nationality.includes(n.name)
@@ -738,16 +756,15 @@ function RequestModal({ request, employers, agents, candidates, lookups, onClose
                         color: checked ? '#fff' : '#4A4A4A',
                         border: `1px solid ${checked ? '#E8673A' : '#ede9e3'}`
                       }}>
-                      {n.name.split('/')[0].trim()}
+                      {showName(n.name, lookups.nationalities, lang)}
                     </button>
                   )
                 })}
               </div>
             </div>
 
-            {/* Sorumluluklar */}
             <div>
-              <label className="block text-xs font-medium mb-2" style={{ color: '#E8673A' }}>Sorumluluklar</label>
+              <label className="block text-xs font-medium mb-2" style={{ color: '#E8673A' }}>{L.responsibilities}</label>
               <div className="flex flex-wrap gap-2 mb-4">
                 {lookups.responsibilities.map(r => {
                   const checked = form.responsibilities.includes(r.name)
@@ -765,16 +782,15 @@ function RequestModal({ request, employers, agents, candidates, lookups, onClose
                         color: checked ? '#fff' : '#4A4A4A',
                         border: `1px solid ${checked ? '#E8673A' : '#ede9e3'}`
                       }}>
-                      {r.name}
+                      {showName(r.name, lookups.responsibilities, lang)}
                     </button>
                   )
                 })}
               </div>
             </div>
 
-            {/* Dil Tercihi */}
             <div>
-              <label className="block text-xs font-medium" style={{ color: '#eb8a67' }}>Dil Tercihi</label>
+              <label className="block text-xs font-medium" style={{ color: '#eb8a67' }}>{L.languagePref}</label>
               <div className="flex gap-2 overflow-x-auto pb-5">
                 {lookups.languages.map(l => {
                   const checked = form.language_pref.includes(l.name)
@@ -787,27 +803,16 @@ function RequestModal({ request, employers, agents, candidates, lookups, onClose
                         color: checked ? '#fff' : '#4A4A4A',
                         border: `1px solid ${checked ? '#3B82F6' : '#ede9e3'}`
                       }}>
-                      {l.name.split('/')[0].trim()}
+                      {showName(l.name, lookups.languages, lang)}
                     </button>
                   )
                 })}
               </div>
             </div>
 
-
-
-            {/* Toggle Kriterleri */}
             <div className="grid grid-cols-3 gap-2">
-              {[
-                { field: 'legal_required', trueLabel: 'Yasal Zorunlu', falseLabel: 'Yasal Şart Değil' },
-                { field: 'smoking_ok', trueLabel: 'Sigara İçebilir', falseLabel: 'Sigara İçemez' },
-                { field: 'drinking_ok', trueLabel: 'Alkol Kullanabilir', falseLabel: 'Alkol Kullanamaz' },
-                { field: 'has_pet', trueLabel: 'Evde Hayvan Var', falseLabel: 'Evde Hayvan Yok' },
-                { field: 'private_room', trueLabel: 'Özel Oda Var', falseLabel: 'Özel Oda Yok' },
-              ].map(item => {
+              {toggleTraits.map(item => {
                 const checked = !!form[item.field as keyof typeof form]
-                // smoking ve drinking için: false (içemez) = vurgulu
-                // diğerleri için: true = vurgulu
                 const isSmokeOrDrink = item.field === 'smoking_ok' || item.field === 'drinking_ok'
                 const isHighlighted = isSmokeOrDrink ? !checked : checked
                 const activeBg = isSmokeOrDrink && isHighlighted ? '#d82f2f' : '#fdf1ec'
@@ -831,19 +836,18 @@ function RequestModal({ request, employers, agents, candidates, lookups, onClose
             </div>
           </div>
 
-          {/* Önerilen Adaylar */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#E8673A' }}>Önerilen Adaylar</p>
+            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#E8673A' }}>{L.suggestedCandidates}</p>
             <div className="grid grid-cols-3 gap-3">
               {[1, 2, 3].map(i => (
                 <div key={i}>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Aday {i}</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{L.candidate} {i}</label>
                   <select
                     value={form[`suggested_candidate_${i}` as keyof typeof form] as string}
                     onChange={e => set(`suggested_candidate_${i}`, e.target.value)}
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                     style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                    <option value="">Seçiniz</option>
+                    <option value="">{L.select}</option>
                     {candidates.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
                   </select>
                 </div>
@@ -851,30 +855,20 @@ function RequestModal({ request, employers, agents, candidates, lookups, onClose
             </div>
           </div>
 
-          {/* Takip Aramaları */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#E8673A' }}>Takip Aramaları</p>
+            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#E8673A' }}>{L.followupCalls}</p>
             <div className="grid grid-cols-2 gap-3">
+              {[1, 2, 3].map(i => (
+                <div key={i}>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{L.followupCall} {i}</label>
+                  <input type="date" value={form[`followup_${i}` as keyof typeof form] as string}
+                    onChange={e => set(`followup_${i}`, e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
+                </div>
+              ))}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Takip Araması 1</label>
-                <input type="date" value={form.followup_1} onChange={e => set('followup_1', e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                  style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Takip Araması 2</label>
-                <input type="date" value={form.followup_2} onChange={e => set('followup_2', e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                  style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Takip Araması 3</label>
-                <input type="date" value={form.followup_3} onChange={e => set('followup_3', e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                  style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Veda Mesajı</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">{L.farewellDate}</label>
                 <input type="date" value={form.farewell_date} onChange={e => set('farewell_date', e.target.value)}
                   className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                   style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
@@ -882,24 +876,23 @@ function RequestModal({ request, employers, agents, candidates, lookups, onClose
             </div>
           </div>
 
-          {/* Diğer Tarihler */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#E8673A' }}>Diğer Tarihler</p>
+            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#E8673A' }}>{L.otherDates}</p>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">İstenen Başlangıç</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">{L.desiredStart}</label>
                 <input type="date" value={form.desired_start} onChange={e => set('desired_start', e.target.value)}
                   className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                   style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">🔔 Alert / Hatırlatıcı</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">🔔 {L.alertDate}</label>
                 <input type="date" value={form.alert_date} onChange={e => set('alert_date', e.target.value)}
                   className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                   style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Durum</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">{L.status}</label>
                 <button type="button"
                   onClick={() => set('is_active', !form.is_active)}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors w-full"
@@ -909,16 +902,15 @@ function RequestModal({ request, employers, agents, candidates, lookups, onClose
                   }}>
                   <div className="w-2 h-2 rounded-full" style={{ background: form.is_active ? '#10B981' : '#9CA3AF' }} />
                   <span className="text-xs" style={{ color: form.is_active ? '#10B981' : '#6B7280' }}>
-                    {form.is_active ? 'Aktif' : 'Pasif'}
+                    {form.is_active ? L.active : L.passive}
                   </span>
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Notlar */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Notlar</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">{L.notes}</label>
             <textarea value={form.notes} onChange={e => set('notes', e.target.value)}
               rows={2}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
@@ -931,12 +923,12 @@ function RequestModal({ request, employers, agents, candidates, lookups, onClose
           <button onClick={onClose}
             className="flex-1 py-2 rounded-xl text-sm font-medium"
             style={{ background: '#F7F6FB', color: '#4A4A4A', border: '1px solid #ede9e3' }}>
-            İptal
+            {L.cancel}
           </button>
           <button onClick={handleSave} disabled={saving}
             className="flex-1 py-2 rounded-xl text-sm font-medium text-white hover:opacity-90"
             style={{ background: '#E8673A' }}>
-            {saving ? 'Kaydediliyor...' : 'Kaydet'}
+            {saving ? L.saving : L.save}
           </button>
         </div>
       </div>

@@ -3,6 +3,8 @@
 import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useLookups } from '@/lib/useLookups'
+import { useLang } from '@/lib/LangContext'
+import { showName, getLabels } from '@/lib/i18n'
 import {
   useReactTable,
   getCoreRowModel,
@@ -35,6 +37,10 @@ type Agent = {
 export default function AgentsPage() {
   const supabase = createClient()
   const { lookups } = useLookups()
+  const { lang } = useLang()
+  const labels = getLabels(lang)
+  const L = { ...labels, ...labels.agents }
+
   const [agents, setAgents] = useState<Agent[]>([])
   const [loading, setLoading] = useState(true)
   const [sorting, setSorting] = useState<SortingState>([])
@@ -52,7 +58,7 @@ export default function AgentsPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Bu aracıyı silmek istediğinizden emin misiniz?')) return
+    if (!confirm(L.deleteConfirm)) return
     await supabase.from('agents').delete().eq('id', id)
     fetchAgents()
   }
@@ -67,7 +73,7 @@ export default function AgentsPage() {
     },
     {
       accessorKey: 'full_name',
-      header: 'Ad Soyad',
+      header: L.fullName,
       cell: ({ row }) => (
         <div>
           <p className="text-sm font-medium" style={{ color: '#4A4A4A' }}>{row.original.full_name}</p>
@@ -78,26 +84,28 @@ export default function AgentsPage() {
     },
     {
       accessorKey: 'nationality',
-      header: 'Uyruk',
-      cell: ({ getValue }) => (
+      header: L.nationality,
+      cell: ({ row }) => (
         <span className="text-sm" style={{ color: '#4A4A4A' }}>
-          {String(getValue() ?? '').split('/')[0].trim() || '-'}
+          {showName(row.original.nationality, lookups.nationalities, lang) || '-'}
         </span>
       ),
     },
     {
       accessorKey: 'country',
-      header: 'Ülke / Şehir',
+      header: L.countryCity,
       cell: ({ row }) => (
         <div>
-          <p className="text-sm" style={{ color: '#4A4A4A' }}>{row.original.country || '-'}</p>
+          <p className="text-sm" style={{ color: '#4A4A4A' }}>
+            {showName(row.original.country, lookups.countries, lang) || '-'}
+          </p>
           {row.original.city && <p className="text-xs" style={{ color: '#9CA3AF' }}>{row.original.city}</p>}
         </div>
       ),
     },
     {
       accessorKey: 'default_rate',
-      header: 'Oran %',
+      header: L.rate,
       cell: ({ getValue }) => (
         <span className="px-2 py-1 rounded-full text-xs font-medium"
           style={{ background: '#fdf1ec', color: '#E8673A' }}>
@@ -107,23 +115,23 @@ export default function AgentsPage() {
     },
     {
       accessorKey: 'active',
-      header: 'Durum',
+      header: L.status,
       cell: ({ getValue }) => (
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getValue() ? 'text-green-600 bg-green-50' : 'text-gray-400 bg-gray-50'}`}>
-          {getValue() ? 'Aktif' : 'Pasif'}
+          {getValue() ? L.active : L.passive}
         </span>
       ),
     },
     {
       accessorKey: 'created_at',
-      header: 'Eklenme',
+      header: L.addedAt,
       cell: ({ getValue }) => (
         <div>
           <p className="text-xs" style={{ color: '#9CA3AF' }}>
-            {getValue() ? new Date(String(getValue())).toLocaleDateString('tr-TR') : '-'}
+            {getValue() ? new Date(String(getValue())).toLocaleDateString(lang === 'en' ? 'en-GB' : 'tr-TR') : '-'}
           </p>
           <p className="text-xs" style={{ color: '#C4C4C4' }}>
-            {getValue() ? new Date(String(getValue())).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''}
+            {getValue() ? new Date(String(getValue())).toLocaleTimeString(lang === 'en' ? 'en-GB' : 'tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''}
           </p>
         </div>
       ),
@@ -161,7 +169,7 @@ export default function AgentsPage() {
         </div>
       ),
     },
-  ], [])
+  ], [lookups, lang])
 
   const table = useReactTable({
     data: agents,
@@ -180,14 +188,14 @@ export default function AgentsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-bold" style={{ color: '#4A4A4A' }}>Aracılar</h2>
-          <p className="text-sm text-gray-500 mt-0.5">{agents.length} aracı kayıtlı</p>
+          <h2 className="text-xl font-bold" style={{ color: '#4A4A4A' }}>{L.title}</h2>
+          <p className="text-sm text-gray-500 mt-0.5">{agents.length} {L.recordCount}</p>
         </div>
         <button
           onClick={() => { setEditingAgent(null); setShowModal(true) }}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-medium hover:opacity-90"
           style={{ background: '#E8673A' }}>
-          <Plus size={16} /> Yeni Aracı
+          <Plus size={16} /> {L.newAgent}
         </button>
       </div>
 
@@ -197,7 +205,7 @@ export default function AgentsPage() {
           <input
             value={globalFilter}
             onChange={e => setGlobalFilter(e.target.value)}
-            placeholder="İsim, telefon veya email ara..."
+            placeholder={L.searchPlaceholder}
             className="w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none"
             style={{ background: '#F7F6FB', border: '1px solid #ede9e3', color: '#4A4A4A' }}
           />
@@ -207,19 +215,19 @@ export default function AgentsPage() {
       <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1px solid #ede9e3' }}>
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="p-12 text-center text-gray-400">Yükleniyor...</div>
+            <div className="p-12 text-center text-gray-400">{L.loading}</div>
           ) : (
             <>
               <table className="w-full">
                 <thead>
                   {table.getHeaderGroups().map(hg => (
-                    <tr key={hg.id} style={{ background: '#F7F6FB', borderBottom: '1px solid #ede9e3' }}>
+                    <tr key={hg.id} style={{ background: '#d9d3f1', borderBottom: '1px solid #ede9e3' }}>
                       {hg.headers.map(header => (
                         <th key={header.id} className="text-left px-4 py-3">
                           {header.isPlaceholder ? null : (
                             <div
-                              className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-wide select-none ${header.column.getCanSort() ? 'cursor-pointer' : ''}`}
-                              style={{ color: '#9CA3AF' }}
+                              className={`flex items-center gap-1 text-xs font-semibold tracking-wide select-none ${header.column.getCanSort() ? 'cursor-pointer' : ''}`}
+                              style={{ color: '#373c44' }}
                               onClick={header.column.getToggleSortingHandler()}>
                               {flexRender(header.column.columnDef.header, header.getContext())}
                               {header.column.getCanSort() && (
@@ -238,7 +246,7 @@ export default function AgentsPage() {
                   {table.getRowModel().rows.length === 0 ? (
                     <tr>
                       <td colSpan={columns.length} className="p-12 text-center text-gray-400">
-                        Aracı bulunamadı.
+                        {L.noResults}
                       </td>
                     </tr>
                   ) : (
@@ -260,7 +268,7 @@ export default function AgentsPage() {
 
               <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid #ede9e3' }}>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">Sayfa başı:</span>
+                  <span className="text-xs text-gray-500">{L.pageSize}:</span>
                   <select
                     value={table.getState().pagination.pageSize}
                     onChange={e => table.setPageSize(Number(e.target.value))}
@@ -268,7 +276,7 @@ export default function AgentsPage() {
                     style={{ background: '#F7F6FB', border: '1px solid #ede9e3', color: '#4A4A4A' }}>
                     {[10, 25, 50].map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
-                  <span className="text-xs text-gray-500">{table.getFilteredRowModel().rows.length} sonuç</span>
+                  <span className="text-xs text-gray-500">{table.getFilteredRowModel().rows.length} {L.results}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-500">
@@ -293,6 +301,7 @@ export default function AgentsPage() {
         <AgentModal
           agent={editingAgent}
           lookups={lookups}
+          lang={lang}
           onClose={() => setShowModal(false)}
           onSave={() => { setShowModal(false); fetchAgents() }}
         />
@@ -301,13 +310,17 @@ export default function AgentsPage() {
   )
 }
 
-function AgentModal({ agent, lookups, onClose, onSave }: {
+function AgentModal({ agent, lookups, lang, onClose, onSave }: {
   agent: Agent | null
   lookups: ReturnType<typeof useLookups>['lookups']
+  lang: string
   onClose: () => void
   onSave: () => void
 }) {
   const supabase = createClient()
+  const labels = getLabels(lang)
+  const L = { ...labels, ...labels.agents }
+
   const [form, setForm] = useState({
     full_name: agent?.full_name ?? '',
     phone: agent?.phone ?? '',
@@ -323,14 +336,14 @@ function AgentModal({ agent, lookups, onClose, onSave }: {
   const set = (field: string, value: unknown) => setForm(f => ({ ...f, [field]: value }))
 
   const handleSave = async () => {
-    if (!form.full_name) return alert('Ad Soyad zorunludur.')
+    if (!form.full_name) return alert(L.nameRequired)
     setSaving(true)
     if (agent) {
       const { error } = await supabase.from('agents').update(form).eq('id', agent.id)
-      if (error) { alert('Hata: ' + error.message); setSaving(false); return }
+      if (error) { alert(L.errorPrefix + error.message); setSaving(false); return }
     } else {
       const { error } = await supabase.from('agents').insert(form)
-      if (error) { alert('Hata: ' + error.message); setSaving(false); return }
+      if (error) { alert(L.errorPrefix + error.message); setSaving(false); return }
     }
     setSaving(false)
     onSave()
@@ -345,7 +358,7 @@ function AgentModal({ agent, lookups, onClose, onSave }: {
         <div className="flex items-center justify-between p-6 flex-shrink-0"
           style={{ borderBottom: '1px solid #ede9e3' }}>
           <h3 className="font-bold text-lg" style={{ color: '#4A4A4A' }}>
-            {agent ? 'Aracıyı Düzenle' : 'Yeni Aracı'}
+            {agent ? L.editAgent : L.newAgent}
           </h3>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
             <X size={18} color="#9CA3AF" />
@@ -354,7 +367,7 @@ function AgentModal({ agent, lookups, onClose, onSave }: {
 
         <div className="overflow-y-auto flex-1 p-6 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Ad Soyad *</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">{L.fullName} *</label>
             <input value={form.full_name} onChange={e => set('full_name', e.target.value)}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none"
               style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
@@ -362,13 +375,13 @@ function AgentModal({ agent, lookups, onClose, onSave }: {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Telefon</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.phone}</label>
               <input value={form.phone} onChange={e => set('phone', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">E-posta</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.email}</label>
               <input value={form.email} onChange={e => set('email', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
@@ -377,25 +390,33 @@ function AgentModal({ agent, lookups, onClose, onSave }: {
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Uyruk</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.nationality}</label>
               <select value={form.nationality} onChange={e => set('nationality', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                <option value="">Seçiniz</option>
-                {lookups.nationalities.map(n => <option key={n.id} value={n.name}>{n.name.split('/')[0].trim()}</option>)}
+                <option value="">{L.select}</option>
+                {lookups.nationalities.map(n => (
+                  <option key={n.id} value={n.name}>
+                    {showName(n.name, lookups.nationalities, lang)}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Yaşadığı Ülke</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.country}</label>
               <select value={form.country} onChange={e => set('country', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                <option value="">Seçiniz</option>
-                {lookups.countries.map(c => <option key={c.id} value={c.name}>{c.name.split('/')[0].trim()}</option>)}
+                <option value="">{L.select}</option>
+                {lookups.countries.map(c => (
+                  <option key={c.id} value={c.name}>
+                    {showName(c.name, lookups.countries, lang)}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Şehir</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.city}</label>
               <input value={form.city} onChange={e => set('city', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
@@ -404,7 +425,7 @@ function AgentModal({ agent, lookups, onClose, onSave }: {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Varsayılan Oran %</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.defaultRate}</label>
               <input type="number" min={0} max={100} value={form.default_rate}
                 onChange={e => set('default_rate', Number(e.target.value))}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
@@ -421,14 +442,14 @@ function AgentModal({ agent, lookups, onClose, onSave }: {
                   onChange={e => set('active', e.target.checked)} />
                 <Star size={14} color={form.active ? '#10B981' : '#9CA3AF'} />
                 <span className="text-xs" style={{ color: form.active ? '#10B981' : '#4A4A4A' }}>
-                  {form.active ? 'Aktif' : 'Pasif'}
+                  {form.active ? L.active : L.passive}
                 </span>
               </label>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Notlar</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">{L.notes}</label>
             <textarea value={form.notes} onChange={e => set('notes', e.target.value)}
               rows={2}
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none"
@@ -440,12 +461,12 @@ function AgentModal({ agent, lookups, onClose, onSave }: {
           <button onClick={onClose}
             className="flex-1 py-2 rounded-xl text-sm font-medium"
             style={{ background: '#F7F6FB', color: '#4A4A4A', border: '1px solid #ede9e3' }}>
-            İptal
+            {L.cancel}
           </button>
           <button onClick={handleSave} disabled={saving}
             className="flex-1 py-2 rounded-xl text-sm font-medium text-white hover:opacity-90"
             style={{ background: '#E8673A' }}>
-            {saving ? 'Kaydediliyor...' : 'Kaydet'}
+            {saving ? L.saving : L.save}
           </button>
         </div>
       </div>
