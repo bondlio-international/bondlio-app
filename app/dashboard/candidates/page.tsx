@@ -119,7 +119,7 @@ export default function CandidatesPage() {
     {
       id: 'nationality',
       accessorFn: row => row.nationality ?? '',
-      header: L.religion,
+      header: L.nationality,
       filterFn: 'equals',
       cell: ({ row }) => (
         <div>
@@ -143,9 +143,9 @@ export default function CandidatesPage() {
           <p className="text-sm" style={{ color: '#4A4A4A' }}>
             {showName(row.original.current_country, lookups.countries, lang)}
           </p>
-          {row.original.religion && (
+          {row.original.current_city && (
             <p className="text-xs" style={{ color: '#9CA3AF' }}>
-              {showName(row.original.religion, lookups.religions, lang)}
+              {showName(row.original.current_city, lookups.cities, lang)}
             </p>
           )}
         </div>
