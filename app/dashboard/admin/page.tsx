@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, Trash2, Check, X, Palette, Pencil } from 'lucide-react'
+import { useLang } from '@/lib/LangContext'
+import { getLabels } from '@/lib/i18n'
 
 type LookupRow = {
     id: number
@@ -18,6 +20,7 @@ type LookupRow = {
 type TableConfig = {
     key: string
     label: string
+    labelEn: string
     table: string
     hasColor?: boolean
     hasCode?: boolean
@@ -26,27 +29,30 @@ type TableConfig = {
 }
 
 const TABLES: TableConfig[] = [
-    { key: 'countries', label: 'Ülkeler', table: 'lookup_countries', hasNameEn: true },
-    { key: 'cities', label: 'Şehirler', table: 'lookup_cities', hasNameEn: true },
-    { key: 'nationalities', label: 'Uyruklar', table: 'lookup_nationalities', hasNameEn: true },
-    { key: 'sources', label: 'Kaynaklar', table: 'lookup_sources', hasNameEn: true },
-    { key: 'services', label: 'Hizmetler', table: 'lookup_services', hasNameEn: true },
-    { key: 'categories', label: 'Kategoriler', table: 'lookup_categories', hasNameEn: true },
-    { key: 'currencies', label: 'Para Birimleri', table: 'lookup_currencies', hasCode: true, hasSymbol: true },
-    { key: 'availability', label: 'Müsaitlik', table: 'lookup_availability', hasColor: true, hasNameEn: true },
-    { key: 'legal_status', label: 'Yasal Durum', table: 'lookup_legal_status', hasNameEn: true },
-    { key: 'work_types', label: 'Çalışma Şekli', table: 'lookup_work_types', hasNameEn: true },
-    { key: 'religions', label: 'Dinler', table: 'lookup_religions', hasNameEn: true },
-    { key: 'languages', label: 'Diller', table: 'lookup_languages', hasNameEn: true },
-    { key: 'accounts', label: 'Hesaplar', table: 'lookup_accounts', hasNameEn: true },
-    { key: 'request_stages', label: 'Talep Aşamaları', table: 'lookup_request_stages', hasColor: true, hasNameEn: true },
-    { key: 'match_stages', label: 'Eşleşme Aşamaları', table: 'lookup_match_stages', hasColor: true, hasNameEn: true },
-    { key: 'match_status', label: 'Eşleşme Durumu', table: 'lookup_match_status', hasColor: true, hasNameEn: true },
-    { key: 'departure_reasons', label: 'Ayrılma Sebepleri', table: 'lookup_departure_reasons', hasNameEn: true },
+    { key: 'countries', label: 'Ülkeler', labelEn: 'Countries', table: 'lookup_countries', hasNameEn: true },
+    { key: 'cities', label: 'Şehirler', labelEn: 'Cities', table: 'lookup_cities', hasNameEn: true },
+    { key: 'nationalities', label: 'Uyruklar', labelEn: 'Nationalities', table: 'lookup_nationalities', hasNameEn: true },
+    { key: 'sources', label: 'Kaynaklar', labelEn: 'Sources', table: 'lookup_sources', hasNameEn: true },
+    { key: 'services', label: 'Hizmetler', labelEn: 'Services', table: 'lookup_services', hasNameEn: true },
+    { key: 'categories', label: 'Kategoriler', labelEn: 'Categories', table: 'lookup_categories', hasNameEn: true },
+    { key: 'currencies', label: 'Para Birimleri', labelEn: 'Currencies', table: 'lookup_currencies', hasCode: true, hasSymbol: true },
+    { key: 'availability', label: 'Müsaitlik', labelEn: 'Availability', table: 'lookup_availability', hasColor: true, hasNameEn: true },
+    { key: 'legal_status', label: 'Yasal Durum', labelEn: 'Legal Status', table: 'lookup_legal_status', hasNameEn: true },
+    { key: 'work_types', label: 'Çalışma Şekli', labelEn: 'Work Types', table: 'lookup_work_types', hasNameEn: true },
+    { key: 'religions', label: 'Dinler', labelEn: 'Religions', table: 'lookup_religions', hasNameEn: true },
+    { key: 'languages', label: 'Diller', labelEn: 'Languages', table: 'lookup_languages', hasNameEn: true },
+    { key: 'accounts', label: 'Hesaplar', labelEn: 'Accounts', table: 'lookup_accounts', hasNameEn: true },
+    { key: 'request_stages', label: 'Talep Aşamaları', labelEn: 'Request Stages', table: 'lookup_request_stages', hasColor: true, hasNameEn: true },
+    { key: 'match_stages', label: 'Eşleşme Aşamaları', labelEn: 'Match Stages', table: 'lookup_match_stages', hasColor: true, hasNameEn: true },
+    { key: 'match_status', label: 'Eşleşme Durumu', labelEn: 'Match Status', table: 'lookup_match_status', hasColor: true, hasNameEn: true },
+    { key: 'departure_reasons', label: 'Ayrılma Sebepleri', labelEn: 'Departure Reasons', table: 'lookup_departure_reasons', hasNameEn: true },
 ]
 
 export default function AdminPage() {
     const supabase = createClient()
+    const { lang } = useLang()
+    const labels = getLabels(lang)
+    const L = { ...labels, ...labels.admin }
     const [activeTab, setActiveTab] = useState(TABLES[0].key)
     const [data, setData] = useState<Record<string, LookupRow[]>>({})
     const [loading, setLoading] = useState<Record<string, boolean>>({})
@@ -80,13 +86,13 @@ export default function AdminPage() {
     }
 
     const handleDelete = async (id: number) => {
-        if (!confirm('Silmek istediğinizden emin misiniz?')) return
+        if (!confirm(L.deleteConfirm)) return
         await supabase.from(activeConfig.table).delete().eq('id', id)
         fetchTable(activeTab)
     }
 
     const handleAdd = async () => {
-        if (!newForm.name) return alert('İsim zorunludur.')
+        if (!newForm.name) return alert(L.nameRequired)
         const maxOrder = Math.max(0, ...(data[activeTab] ?? []).map(r => r.sort_order ?? 0))
         await supabase.from(activeConfig.table).insert({ ...newForm, sort_order: maxOrder + 1, active: true })
         setNewForm({})
@@ -104,8 +110,8 @@ export default function AdminPage() {
     return (
         <div>
             <div className="mb-6">
-                <h2 className="text-xl font-bold" style={{ color: '#4A4A4A' }}>Admin Paneli</h2>
-                <p className="text-sm text-gray-500 mt-0.5">Lookup tablolarını yönet</p>
+                <h2 className="text-xl font-bold" style={{ color: '#4A4A4A' }}> {L.title}</h2>
+                <p className="text-sm text-gray-500 mt-0.5"> {L.subtitle}</p>
             </div>
 
             {/* Tab listesi */}
@@ -117,7 +123,7 @@ export default function AdminPage() {
                             background: activeTab === t.key ? '#E8673A' : 'transparent',
                             color: activeTab === t.key ? '#fff' : '#6B7280',
                         }}>
-                        {t.label}
+                        {lang === 'en' ? t.labelEn : t.label}
                     </button>
                 ))}
             </div>
@@ -130,14 +136,14 @@ export default function AdminPage() {
                     <div className="flex items-center justify-between px-4 py-3"
                         style={{ borderBottom: '1px solid #ede9e3', background: '#F7F6FB' }}>
                         <span className="text-sm font-semibold" style={{ color: '#4A4A4A' }}>
-                            {activeConfig.label}
-                            <span className="ml-2 text-xs font-normal text-gray-400">({rows.length} kayıt)</span>
+                            {lang === 'en' ? activeConfig.labelEn : activeConfig.label}
+                            <span className="ml-2 text-xs font-normal text-gray-400">({rows.length} {L.records})</span>
                         </span>
                         <button
                             onClick={() => { setShowNew(true); setNewForm({}) }}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white"
                             style={{ background: '#E8673A' }}>
-                            <Plus size={13} /> Yeni Ekle
+                            <Plus size={13} /> {L.newRecord}
                         </button>
                     </div>
 
@@ -148,7 +154,7 @@ export default function AdminPage() {
                             <input
                                 value={newForm.name ?? ''}
                                 onChange={e => setNewForm(f => ({ ...f, name: e.target.value }))}
-                                placeholder="İsim"
+                                placeholder={L.namePlaceholder}
                                 className="flex-1 px-3 py-1.5 rounded-lg text-sm outline-none"
                                 style={{ border: '1px solid #E8673A', color: '#4A4A4A' }}
                                 onKeyDown={e => e.key === 'Enter' && handleAdd()}
@@ -167,7 +173,7 @@ export default function AdminPage() {
                                 <input
                                     value={newForm.code ?? ''}
                                     onChange={e => setNewForm(f => ({ ...f, code: e.target.value }))}
-                                    placeholder="Kod"
+                                    placeholder={L.codePlaceholder}
                                     className="w-20 px-3 py-1.5 rounded-lg text-sm outline-none"
                                     style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}
                                 />
@@ -176,7 +182,7 @@ export default function AdminPage() {
                                 <input
                                     value={newForm.symbol ?? ''}
                                     onChange={e => setNewForm(f => ({ ...f, symbol: e.target.value }))}
-                                    placeholder="Sembol"
+                                    placeholder={L.symbolPlaceholder}
                                     className="w-16 px-3 py-1.5 rounded-lg text-sm outline-none"
                                     style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}
                                 />
@@ -205,19 +211,19 @@ export default function AdminPage() {
 
                     {/* Tablo */}
                     {loading[activeTab] ? (
-                        <div className="p-12 text-center text-gray-400">Yükleniyor...</div>
+                        <div className="p-12 text-center text-gray-400"> {L.loading} </div>
                     ) : (
                         <table className="w-full">
                             <thead>
-                                <tr style={{ borderBottom: '1px solid #ede9e3' }}>
-                                    <th className="text-left px-4 py-2 text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>ID</th>
-                                    <th className="text-left px-4 py-2 text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>İsim</th>
-                                    {activeConfig.hasCode && <th className="text-left px-4 py-2 text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Kod</th>}
-                                    {activeConfig.hasSymbol && <th className="text-left px-4 py-2 text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Sembol</th>}
-                                    {activeConfig.hasNameEn && (<th className="text-left px-4 py-2 text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>İngilizce</th>)}
-                                    {activeConfig.hasColor && <th className="text-left px-4 py-2 text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Renk</th>}
-                                    <th className="text-left px-4 py-2 text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Aktif</th>
-                                    <th className="text-left px-4 py-2 text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Sıra</th>
+                                <tr style={{ borderBottom: '1px solid #f5a2a2', background: '#fff2f2', color: '#13459b' }}>
+                                    <th className="text-left px-4 py-2 text-xs font-semibold tracking-wide">ID</th>
+                                    <th className="text-left px-4 py-2 text-xs font-semibold tracking-wide"> {L.name} </th>
+                                    {activeConfig.hasCode && <th className="text-left px-4 py-2 text-xs font-semibold tracking-wide"> {L.code} </th>}
+                                    {activeConfig.hasSymbol && <th className="text-left px-4 py-2 text-xs font-semibold tracking-wide"> {L.symbol} </th>}
+                                    {activeConfig.hasNameEn && (<th className="text-left px-4 py-2 text-xs font-semibold tracking-wide"> {L.english} </th>)}
+                                    {activeConfig.hasColor && <th className="text-left px-4 py-2 text-xs font-semibold tracking-wide"> {L.color} </th>}
+                                    <th className="text-left px-4 py-2 text-xs font-semibold tracking-wide"> {L.active} </th>
+                                    <th className="text-left px-4 py-2 text-xs font-semibold tracking-wide"> {L.order} </th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -315,7 +321,7 @@ export default function AdminPage() {
                                                     background: row.active ? '#dcfce7' : '#F7F6FB',
                                                     color: row.active ? '#16a34a' : '#9CA3AF'
                                                 }}>
-                                                {row.active ? 'Aktif' : 'Pasif'}
+                                                {row.active ? L.active : L.passive}
                                             </button>
                                         </td>
                                         <td className="px-4 py-2.5">

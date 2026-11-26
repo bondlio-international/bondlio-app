@@ -340,6 +340,31 @@ const labelsTr = {
         saving: 'Kaydediliyor...',
         deleteConfirm: 'Bu gideri silmek istediğinizden emin misiniz?',
     },
+
+    // Admin:
+    admin: {
+        title: 'Admin Paneli',
+        subtitle: 'Lookup tablolarını yönet',
+        records: 'kayıt',
+        newRecord: 'Yeni Ekle',
+        noRecords: 'Kayıt yok.',
+        loading: 'Yükleniyor...',
+        name: 'İsim',
+        english: 'İngilizce',
+        code: 'Kod',
+        symbol: 'Sembol',
+        color: 'Renk',
+        active: 'Aktif',
+        passive: 'Pasif',
+        order: 'Sıra',
+        namePlaceholder: 'İsim',
+        englishPlaceholder: 'English name',
+        codePlaceholder: 'Kod',
+        symbolPlaceholder: 'Sembol',
+        deleteConfirm: 'Silmek istediğinizden emin misiniz?',
+        nameRequired: 'İsim zorunludur.',
+        noAccess: 'Bu sayfaya erişim yetkiniz yok.',
+    },
 }
 
 
@@ -662,5 +687,30 @@ const labelsEn: typeof labelsTr = {
         save: 'Save',
         saving: 'Saving...',
         deleteConfirm: 'Are you sure you want to delete this expense record?',
+    },
+
+    // admin
+    admin: {
+        title: 'Admin Panel',
+        subtitle: 'Manage lookup tables',
+        records: 'records',
+        newRecord: 'Add New',
+        noRecords: 'No records.',
+        loading: 'Loading...',
+        name: 'Name',
+        english: 'English',
+        code: 'Code',
+        symbol: 'Symbol',
+        color: 'Color',
+        active: 'Active',
+        passive: 'Passive',
+        order: 'Order',
+        namePlaceholder: 'Name',
+        englishPlaceholder: 'English name',
+        codePlaceholder: 'Code',
+        symbolPlaceholder: 'Symbol',
+        deleteConfirm: 'Are you sure you want to delete this?',
+        nameRequired: 'Name is required.',
+        noAccess: 'You do not have permission to access this page.',
     },
 }

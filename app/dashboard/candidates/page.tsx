@@ -194,7 +194,7 @@ export default function CandidatesPage() {
       accessorKey: 'expected_salary',
       header: L.expectedSalary,
       cell: ({ row }) => (
-        <span className="text-sm" style={{ color: '#4A4A4A' }}>
+        <span className="text-xs" style={{ color: '#4A4A4A' }}>
           {row.original.expected_salary ? `${Number(row.original.expected_salary).toLocaleString('tr-TR')} ${row.original.salary_currency}` : '—'}
         </span>
       ),
