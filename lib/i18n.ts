@@ -35,6 +35,8 @@ const labelsTr = {
     errorPrefix: 'Hata: ',
     active: 'Aktif',
     passive: 'Pasif',
+    employerAgent: 'İşveren Aracısı',
+    candidateAgent: 'Başvuran Aracısı',
 
     // İşverenler
     employers: {
@@ -389,6 +391,8 @@ const labelsEn: typeof labelsTr = {
     errorPrefix: 'Hata: ',
     active: 'Active',
     passive: 'Inactive',
+    employerAgent: 'Employer Agent',
+    candidateAgent: 'Applicant Agent',
 
     employers: {
         title: 'Employers',

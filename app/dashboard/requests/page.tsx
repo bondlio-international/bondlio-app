@@ -58,6 +58,10 @@ type Request = {
   is_active: boolean
   private_room: boolean
   responsibilities: string[]
+  employer_agent_id: number
+  candidate_agent_id: number
+  employerAgent?: { full_name: string }
+  candidateAgent?: { full_name: string }
 }
 
 export default function RequestsPage() {
@@ -84,7 +88,7 @@ export default function RequestsPage() {
   const fetchAll = async () => {
     setLoading(true)
     const [{ data: req }, { data: emp }, { data: agt }, { data: can }] = await Promise.all([
-      supabase.from('requests').select('*, employers(full_name), agents(full_name)').order('created_at', { ascending: false }),
+      supabase.from('requests').select('*, employers(full_name), employerAgent:employer_agent_id(full_name), candidateAgent:candidate_agent_id(full_name)'),
       supabase.from('employers').select('id, full_name').order('full_name'),
       supabase.from('agents').select('id, full_name').order('full_name'),
       supabase.from('candidates').select('id, full_name').order('full_name'),
@@ -119,8 +123,15 @@ export default function RequestsPage() {
           <p className="text-sm font-medium" style={{ color: '#4A4A4A' }}>
             {row.original.employers?.full_name ?? '-'}
           </p>
-          {row.original.agents?.full_name && (
-            <p className="text-xs" style={{ color: '#9CA3AF' }}>{row.original.agents.full_name}</p>
+          {row.original.employerAgent?.full_name && (
+            <p className="text-xs" style={{ color: '#f18d74' }}>
+              - {row.original.employerAgent.full_name}
+            </p>
+          )}
+          {row.original.candidateAgent?.full_name && (
+            <p className="text-xs" style={{ color: '#49949e' }}>
+              - {row.original.candidateAgent.full_name}
+            </p>
           )}
         </div>
       ),
@@ -523,7 +534,6 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
 
   const [form, setForm] = useState({
     employer_id: request?.employer_id ?? '',
-    agent_id: request?.agent_id ?? '',
     stage: request?.stage ?? 'Yeni Geldi',
     service: request?.service ?? '',
     city: request?.city ?? '',
@@ -534,8 +544,8 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
     desired_nationality: request?.desired_nationality ?? [],
     language_pref: request?.language_pref ?? [],
     religion_pref: request?.religion_pref ?? '',
-    min_age: request?.min_age ?? '',
-    max_age: request?.max_age ?? '',
+    min_age: request?.min_age ?? '25',
+    max_age: request?.max_age ?? '50',
     smoking_ok: request?.smoking_ok ?? true,
     drinking_ok: request?.drinking_ok ?? true,
     has_pet: request?.has_pet ?? false,
@@ -554,6 +564,8 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
     is_active: request?.is_active ?? true,
     private_room: request?.private_room ?? true,
     responsibilities: request?.responsibilities ?? [],
+    employer_agent_id: request?.employer_agent_id ?? '',
+    candidate_agent_id: request?.candidate_agent_id ?? '',
   })
   const [saving, setSaving] = useState(false)
   const set = (field: string, value: unknown) => setForm(f => ({ ...f, [field]: value }))
@@ -573,7 +585,6 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
     const payload = {
       ...form,
       employer_id: Number(form.employer_id),
-      agent_id: form.agent_id ? Number(form.agent_id) : null,
       max_salary: form.max_salary ? Number(form.max_salary) : null,
       min_age: form.min_age ? Number(form.min_age) : null,
       max_age: form.max_age ? Number(form.max_age) : null,
@@ -587,6 +598,8 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
       followup_3: form.followup_3 || null,
       farewell_date: form.farewell_date || null,
       alert_date: form.alert_date || null,
+      employer_agent_id: form.employer_agent_id ? Number(form.employer_agent_id) : null,
+      candidate_agent_id: form.candidate_agent_id ? Number(form.candidate_agent_id) : null,
     }
     if (request) {
       const { error } = await supabase.from('requests').update(payload).eq('id', request.id)
@@ -625,7 +638,9 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
 
         <div className="overflow-y-auto flex-1 p-6 space-y-5">
 
-          <div className="grid grid-cols-2 gap-3">
+
+
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">{L.employer} *</label>
               <select value={form.employer_id} onChange={e => set('employer_id', e.target.value)}
@@ -636,8 +651,17 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">{L.agent}</label>
-              <select value={form.agent_id} onChange={e => set('agent_id', e.target.value)}
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.employerAgent}</label>
+              <select value={form.employer_agent_id} onChange={e => set('employer_agent_id', e.target.value)}
+                className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
+                <option value="">{L.select}</option>
+                {agents.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{L.candidateAgent}</label>
+              <select value={form.candidate_agent_id} onChange={e => set('candidate_agent_id', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
                 <option value="">{L.select}</option>
