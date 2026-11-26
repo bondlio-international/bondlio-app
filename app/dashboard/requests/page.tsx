@@ -415,7 +415,7 @@ export default function RequestsPage() {
               <table className="w-full">
                 <thead>
                   {table.getHeaderGroups().map(hg => (
-                    <tr key={hg.id} style={{ background: '#e5fad3', borderBottom: '1px solid #ede9e3' }}>
+                    <tr key={hg.id} style={{ background: '#e9fdfd', borderBottom: '1px solid #ede9e3' }}>
                       {hg.headers.map(header => (
                         <th key={header.id} className="text-left px-4 py-3">
                           {header.isPlaceholder ? null : (
