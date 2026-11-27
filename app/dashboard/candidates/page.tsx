@@ -17,7 +17,7 @@ import {
 import {
   Plus, Search, ChevronUp, ChevronDown, ChevronsUpDown,
   ChevronLeft, ChevronRight, Pencil, Trash2, AlertCircle,
-  Star, X, Cigarette, Wine, Waves, Sparkles, FolderOpen, Info, PawPrint
+  Star, X, Cigarette, Wine, Waves, Sparkles, FolderOpen, Info, PawPrint, MapPin, ArrowRightFromLine
 } from 'lucide-react'
 
 import { useLang } from '@/lib/LangContext'
@@ -57,6 +57,7 @@ type Candidate = {
   notes: string
   created_at: string
   pet_ok: boolean
+  ok_to_relocate: boolean
 }
 
 export default function CandidatesPage() {
@@ -98,8 +99,19 @@ export default function CandidatesPage() {
     {
       accessorKey: 'id',
       header: 'ID',
-      cell: ({ getValue }) => (
-        <span className="text-xs font-mono" style={{ color: '#9CA3AF' }}>#{getValue() as number}</span>
+      cell: ({ getValue, row }) => (
+        <div className="relative group">
+          <span className="text-xs font-mono cursor-default" style={{ color: '#9CA3AF' }}>
+            #{getValue() as number}
+          </span>
+          {row.original.created_at && (
+            <div className="absolute left-0 top-6 z-10 px-2 py-1 rounded-lg shadow-lg text-xs whitespace-nowrap invisible group-hover:visible"
+              style={{ background: '#1F2937', color: '#fff' }}>
+              {new Date(row.original.created_at).toLocaleDateString('tr-TR')}, {new Date(row.original.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+              <div className="absolute top-[-4px] left-3 w-2 h-2 rotate-45" style={{ background: '#1F2937' }} />
+            </div>
+          )}
+        </div>
       ),
     },
     {
@@ -137,6 +149,7 @@ export default function CandidatesPage() {
     },
     {
       id: 'location',
+      accessorFn: row => row.current_city ?? '',
       header: L.location,
       cell: ({ row }) => (
         <div>
@@ -150,6 +163,30 @@ export default function CandidatesPage() {
           )}
         </div>
       ),
+    },
+
+    {
+      id: 'details',
+      accessorFn: row => row.work_type ?? '',
+      header: L.details,
+      cell: ({ row }) => {
+        const r = row.original
+        const workType = showName(r.work_type, lookups.workTypes, lang)
+        const religion = showName(r.religion, lookups.religions, lang)
+        return (
+          <div>
+            {workType && (
+              <p className="text-xs font-medium" style={{ color: '#4A4A4A' }}>{workType}</p>
+            )}
+            <p className="text-xs" style={{ color: '#9CA3AF' }}>
+              {[
+                r.num_children != null ? `${r.num_children} ${lang === 'en' ? 'kids' : 'çocuk'}` : null,
+                religion || null,
+              ].filter(Boolean).join(', ') || '—'}
+            </p>
+          </div>
+        )
+      },
     },
     {
       accessorKey: 'skills',
@@ -204,11 +241,23 @@ export default function CandidatesPage() {
       header: L.features,
       cell: ({ row }) => (
         <div className="flex gap-1.5 items-center">
-          <Waves size={14} color={row.original.can_swim ? '#3B82F6' : '#E5E7EB'} />
-          <Cigarette size={14} color={row.original.smokes ? '#F59E0B' : '#E5E7EB'} />
-          <Wine size={14} color={row.original.drinks ? '#8B5CF6' : '#E5E7EB'} />
-          <Sparkles size={14} color={row.original.tattoo ? '#EF4444' : '#E5E7EB'} />
-          <PawPrint size={14} color={row.original.pet_ok ? '#10B981' : '#E5E7EB'} />
+          {[
+            { icon: Waves, val: row.original.can_swim, label: row.original.can_swim ? L.canSwim : L.cannotSwim, color: '#3B82F6' },
+            { icon: Cigarette, val: row.original.smokes, label: row.original.smokes ? L.smokes : L.notSmokes, color: '#F59E0B' },
+            { icon: Wine, val: row.original.drinks, label: row.original.drinks ? L.drinks : L.notDrinks, color: '#8B5CF6' },
+            { icon: Sparkles, val: row.original.tattoo, label: row.original.tattoo ? L.hasTattoo : L.noTattoo, color: '#EF4444' },
+            { icon: PawPrint, val: row.original.pet_ok, label: row.original.pet_ok ? L.petOk : L.petNotOk, color: '#10B981' },
+            { icon: ArrowRightFromLine, val: row.original.ok_to_relocate, label: row.original.ok_to_relocate ? L.okToRelocate : L.notOkToRelocate, color: '#10B981' },
+          ].map(({ icon: Icon, val, label, color }) => (
+            <div key={label} className="relative group">
+              <Icon size={14} color={val ? color : '#E5E7EB'} />
+              <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 px-2 py-1 rounded-lg shadow-lg text-xs whitespace-nowrap invisible group-hover:visible"
+                style={{ background: '#1F2937', color: '#fff' }}>
+                {label}
+                <div className="absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-2 h-2 rotate-45" style={{ background: '#1F2937' }} />
+              </div>
+            </div>
+          ))}
         </div>
       ),
     },
@@ -222,20 +271,6 @@ export default function CandidatesPage() {
               fill={i <= Number(getValue() ?? 0) ? '#E8673A' : 'none'}
               color={i <= Number(getValue() ?? 0) ? '#E8673A' : '#D1D5DB'} />
           ))}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'created_at',
-      header: L.added,
-      cell: ({ getValue }) => (
-        <div>
-          <p className="text-xs" style={{ color: '#9CA3AF' }}>
-            {getValue() ? new Date(String(getValue())).toLocaleDateString('tr-TR') : '-'}
-          </p>
-          <p className="text-xs" style={{ color: '#C4C4C4' }}>
-            {getValue() ? new Date(String(getValue())).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''}
-          </p>
         </div>
       ),
     },
@@ -534,6 +569,7 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
     reference_contact: candidate?.reference_contact ?? '',
     documents_url: candidate?.documents_url ?? '',
     notes: candidate?.notes ?? '',
+    ok_to_relocate: candidate?.ok_to_relocate ?? false,
   })
   const [saving, setSaving] = useState(false)
   const set = (field: string, value: unknown) => setForm(f => ({ ...f, [field]: value }))
@@ -560,9 +596,18 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
       const { error } = await supabase.from('candidates').update(payload).eq('id', candidate.id)
       if (error) { alert('Hata: ' + error.message); setSaving(false); return }
     } else {
-      const { error } = await supabase.from('candidates').insert(payload)
+      const { data, error } = await supabase.from('candidates').insert(payload).select().single()
       if (error) { alert('Hata: ' + error.message); setSaving(false); return }
+
+      // Yeni aday → Drive klasörü oluştur
+      if (data) {
+        await supabase.functions.invoke('create-drive-folder', {
+          body: { candidate_id: data.id, full_name: data.full_name }
+        })
+      }
     }
+
+
     setSaving(false)
     onSave()
   }
@@ -573,8 +618,9 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
     { field: 'drinks', trueLabel: L.drinks, falseLabel: L.notDrinks, icon: Wine },
     { field: 'tattoo', trueLabel: L.hasTattoo, falseLabel: L.noTattoo, icon: Sparkles },
     { field: 'married', trueLabel: L.married, falseLabel: L.single, icon: Star },
-    { field: 'blacklist', trueLabel: L.blacklist, falseLabel: L.notBlacklist, icon: AlertCircle },
     { field: 'pet_ok', trueLabel: L.petOk, falseLabel: L.petNotOk, icon: PawPrint },
+    { field: 'ok_to_relocate', trueLabel: L.okToRelocate, falseLabel: L.notOkToRelocate, icon: ArrowRightFromLine },
+    { field: 'blacklist', trueLabel: L.blacklist, falseLabel: L.notBlacklist, icon: AlertCircle },
   ]
 
   return (

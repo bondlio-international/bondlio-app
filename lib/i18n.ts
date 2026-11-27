@@ -37,6 +37,7 @@ const labelsTr = {
     passive: 'Pasif',
     employerAgent: 'İşveren Aracısı',
     candidateAgent: 'Başvuran Aracısı',
+    details: 'Detaylar',
 
     // İşverenler
     employers: {
@@ -122,6 +123,8 @@ const labelsTr = {
         notBlacklist: 'Kara Liste Değil',
         petOk: 'Evcil Hayvan OK',
         petNotOk: 'Evcil Hayvan İstemiyor',
+        okToRelocate: 'Başka Şehir OK',
+        notOkToRelocate: 'Şehir Değiştirme OLMAZ',
         clear: 'Tümü',
     },
 
@@ -393,6 +396,7 @@ const labelsEn: typeof labelsTr = {
     passive: 'Inactive',
     employerAgent: 'Employer Agent',
     candidateAgent: 'Applicant Agent',
+    details: 'Details',
 
     employers: {
         title: 'Employers',
@@ -478,6 +482,8 @@ const labelsEn: typeof labelsTr = {
         petOk: 'Pets OK',
         petNotOk: 'No Pets',
         clear: 'Clear',
+        okToRelocate: 'Relocate OK',
+        notOkToRelocate: 'No Relocate',
     },
 
     agents: {
