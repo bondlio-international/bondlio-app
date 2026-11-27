@@ -31,6 +31,8 @@ type Request = {
   work_type: string
   salary_currency: string
   max_salary: number
+  allowance: number
+  allowance_currency: string
   legal_required: boolean
   desired_nationality: string[]
   language_pref: string[]
@@ -110,8 +112,19 @@ export default function RequestsPage() {
     {
       accessorKey: 'id',
       header: 'ID',
-      cell: ({ getValue }) => (
-        <span className="text-xs font-mono" style={{ color: '#9CA3AF' }}>#{getValue() as number}</span>
+      cell: ({ getValue, row }) => (
+        <div className="relative group">
+          <span className="text-xs font-mono cursor-default" style={{ color: '#9CA3AF' }}>
+            #{getValue() as number}
+          </span>
+          {row.original.created_at && (
+            <div className="absolute left-0 top-6 z-10 px-2 py-1 rounded-lg shadow-lg text-xs whitespace-nowrap invisible group-hover:visible"
+              style={{ background: '#1F2937', color: '#fff' }}>
+              {new Date(row.original.created_at).toLocaleDateString('tr-TR')}, {new Date(row.original.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+              <div className="absolute top-[-4px] left-3 w-2 h-2 rotate-45" style={{ background: '#1F2937' }} />
+            </div>
+          )}
+        </div>
       ),
     },
     {
@@ -125,12 +138,12 @@ export default function RequestsPage() {
           </p>
           {row.original.employerAgent?.full_name && (
             <p className="text-xs" style={{ color: '#f18d74' }}>
-              - {row.original.employerAgent.full_name}
+              (E) {row.original.employerAgent.full_name}
             </p>
           )}
           {row.original.candidateAgent?.full_name && (
             <p className="text-xs" style={{ color: '#49949e' }}>
-              - {row.original.candidateAgent.full_name}
+              (A) {row.original.candidateAgent.full_name}
             </p>
           )}
         </div>
@@ -173,11 +186,22 @@ export default function RequestsPage() {
     },
     {
       accessorKey: 'max_salary',
-      header: L.maxSalary,
+      header: 'Salary / Allowance',
       cell: ({ row }) => (
-        <span className="text-sm" style={{ color: '#4A4A4A' }}>
-          {row.original.max_salary ? `${Number(row.original.max_salary).toLocaleString(lang === 'en' ? 'en-GB' : 'tr-TR')} ${row.original.salary_currency}` : '—'}
-        </span>
+        <div>
+          <p className="text-xs" style={{ color: '#4A4A4A' }}>
+            {row.original.max_salary
+              ? `${Number(row.original.max_salary).toLocaleString(lang === 'en' ? 'en-GB' : 'tr-TR')} ${row.original.salary_currency}`
+              : <span style={{ color: '#E5E7EB' }}>—</span>}
+          </p>
+          {row.original.allowance ? (
+            <p className="text-xs font-medium" style={{ color: '#E8673A' }}>
+              +{Number(row.original.allowance).toLocaleString(lang === 'en' ? 'en-GB' : 'tr-TR')} {row.original.allowance_currency || 'TRY'}
+            </p>
+          ) : (
+            <p className="text-xs" style={{ color: '#EF4444' }}>—</p>
+          )}
+        </div>
       ),
     },
     {
@@ -232,7 +256,7 @@ export default function RequestsPage() {
               const candidate = candidates.find(c => c.id === id)
               return (
                 <p key={i} className="text-xs" style={{ color: '#4A4A4A' }}>
-                  {candidate?.full_name ?? `#${id}`}
+                  · {candidate?.full_name ?? `#${id}`}
                 </p>
               )
             })}
@@ -301,20 +325,6 @@ export default function RequestsPage() {
         <div>
           <p className="text-xs" style={{ color: '#9CA3AF' }}>
             {getValue() ? new Date(String(getValue())).toLocaleDateString(lang === 'en' ? 'en-GB' : 'tr-TR') : '—'}
-          </p>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'created_at',
-      header: L.addedAt,
-      cell: ({ getValue }) => (
-        <div>
-          <p className="text-xs" style={{ color: '#9CA3AF' }}>
-            {getValue() ? new Date(String(getValue())).toLocaleDateString(lang === 'en' ? 'en-GB' : 'tr-TR') : '-'}
-          </p>
-          <p className="text-xs" style={{ color: '#C4C4C4' }}>
-            {getValue() ? new Date(String(getValue())).toLocaleTimeString(lang === 'en' ? 'en-GB' : 'tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''}
           </p>
         </div>
       ),
@@ -540,6 +550,8 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
     work_type: request?.work_type ?? '',
     salary_currency: request?.salary_currency ?? 'USD',
     max_salary: request?.max_salary ?? '',
+    allowance: request?.allowance ?? '',
+    allowance_currency: request?.allowance_currency ?? 'TRY',
     legal_required: request?.legal_required ?? true,
     desired_nationality: request?.desired_nationality ?? [],
     language_pref: request?.language_pref ?? [],
@@ -586,6 +598,8 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
       ...form,
       employer_id: Number(form.employer_id),
       max_salary: form.max_salary ? Number(form.max_salary) : null,
+      allowance: form.allowance ? Number(form.allowance) : null,
+      allowance_currency: form.allowance_currency || 'TRY',
       min_age: form.min_age ? Number(form.min_age) : null,
       max_age: form.max_age ? Number(form.max_age) : null,
       num_kids: form.num_kids ? Number(form.num_kids) : null,
@@ -637,8 +651,6 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
         </div>
 
         <div className="overflow-y-auto flex-1 p-6 space-y-5">
-
-
 
           <div className="grid grid-cols-3 gap-3">
             <div>
@@ -709,6 +721,40 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
             </div>
           </div>
 
+          {/* Salary + Allowance */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3 rounded-xl" style={{ background: '#F7F6FB', border: '1px solid #ede9e3' }}>
+              <p className="text-xs font-semibold mb-2" style={{ color: '#4A4A4A' }}>{L.maxSalary}</p>
+              <div className="flex gap-2">
+                <input type="number" value={form.max_salary}
+                  onChange={e => set('max_salary', e.target.value)}
+                  placeholder="0"
+                  className="flex-1 px-3 py-2 rounded-lg text-sm outline-none bg-white"
+                  style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
+                <select value={form.salary_currency} onChange={e => set('salary_currency', e.target.value)}
+                  className="px-2 py-2 rounded-lg text-sm outline-none bg-white"
+                  style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
+                  {lookups.currencies.map(c => <option key={c.id} value={c.code}>{c.code}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="p-3 rounded-xl" style={{ background: '#fff8f5', border: '1px solid #fcd9cb' }}>
+              <p className="text-xs font-semibold mb-2" style={{ color: '#E8673A' }}>Allowance</p>
+              <div className="flex gap-2">
+                <input type="number" value={form.allowance}
+                  onChange={e => set('allowance', e.target.value)}
+                  placeholder="0"
+                  className="flex-1 px-3 py-2 rounded-lg text-sm outline-none bg-white"
+                  style={{ border: '1px solid #fcd9cb', color: '#4A4A4A' }} />
+                <select value={form.allowance_currency} onChange={e => set('allowance_currency', e.target.value)}
+                  className="px-2 py-2 rounded-lg text-sm outline-none bg-white"
+                  style={{ border: '1px solid #fcd9cb', color: '#4A4A4A' }}>
+                  {lookups.currencies.map(c => <option key={c.id} value={c.code}>{c.code}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-4 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">{L.workType}</label>
@@ -717,21 +763,6 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
                 <option value="">{L.select}</option>
                 {lookups.workTypes.map(w => <option key={w.id} value={w.name}>{showName(w.name, lookups.workTypes, lang)}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">{L.maxSalary}</label>
-              <input type="number" value={form.max_salary}
-                onChange={e => set('max_salary', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">{L.currency}</label>
-              <select value={form.salary_currency} onChange={e => set('salary_currency', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
-                {lookups.currencies.map(c => <option key={c.id} value={c.code}>{c.code}</option>)}
               </select>
             </div>
             <div>
@@ -745,9 +776,6 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
                 ))}
               </select>
             </div>
-          </div>
-
-          <div className="grid grid-cols-4 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">{L.minAge}</label>
               <input type="number" value={form.min_age} onChange={e => set('min_age', e.target.value)}
@@ -760,13 +788,16 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
             </div>
+          </div>
+
+          <div className="grid grid-cols-4 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">{L.numKids}</label>
               <input type="number" value={form.num_kids} onChange={e => set('num_kids', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
             </div>
-            <div>
+            <div className="col-span-3">
               <label className="block text-xs font-medium text-gray-500 mb-1">{L.kidsAges}</label>
               <input value={form.kids_ages} onChange={e => set('kids_ages', e.target.value)}
                 placeholder="2, 5"
