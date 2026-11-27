@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Users, Globe, Languages, BookOpen, Calendar, Home, PawPrint, BadgeInfo, ClipboardList } from 'lucide-react'
+import { Users, Globe, Languages, BookOpen, Calendar, Home, PawPrint, BadgeInfo, ClipboardList, MapPin } from 'lucide-react'
 
 
 type Request = {
@@ -25,9 +25,11 @@ type Request = {
   has_pet: boolean
   desired_start: string
   notes: string
-  employers?: { city: string; district: string; country: string; }
   private_room: boolean
   responsibilities: string[]
+  allowance: number
+  allowance_currency: string
+  employers?: { city: string; district: string; country: string; full_name: string }
 }
 
 export default function ReportsPage() {
@@ -49,42 +51,46 @@ export default function ReportsPage() {
 
   const labels = {
     tr: {
-      searching: 'ARANIYOR',
+      searching: 'YENİ İŞ FIRSATI',
       people: 'Kişi Sayısı',
       nationality: 'Uyruk',
       language: 'Dil',
       religion: 'Din',
-      age: 'Yaş Aralığı',
+      age: 'Yaş',
       start: 'Başlangıç',
       room: 'Özel Oda',
       pets: 'Evcil Hayvan',
-      salary: 'Maaş',
+      salary: 'MAAŞ',
       noSmoking: '🚭 Sigara İçemez',
-      noAlcohol: '🚫 Alkol Kullanamaz',
-      legal: '📋 Yasal Belge Zorunlu',
+      noAlcohol: '🚫 Alkol İçemez',
+      legal: '📋 Legal',
       privateRoom: 'Özel Oda Mevcut',
-      petsHome: 'Evde Hayvan Var',
+      petsHome: 'Evcil Hayvan',
       responsibilities: 'Sorumluluklar',
-      religionPreference: 'Fark Etmez',
+      religionPreference: 'Din Farketmez',
+      person: 'kişi',
+      allowance: 'Harçlık',
     },
     en: {
-      searching: 'WE ARE SEARCHING FOR',
+      searching: 'NEW JOB OFFER',
       people: 'No. of People',
       nationality: 'Nationality',
       language: 'Language',
       religion: 'Religion',
-      age: 'Age Range',
-      start: 'Start Date',
+      age: 'Age',
+      start: 'Start',
       room: 'Private Room',
       pets: 'PETS',
       salary: 'SALARY',
       noSmoking: '🚭 Non-Smoker',
       noAlcohol: '🚫 No Alcohol',
-      legal: '📋 Legal Docs Required',
-      privateRoom: 'Private Room Available',
+      legal: '📋 Legal Required',
+      privateRoom: 'Private Room Provided',
       petsHome: 'Pets at Home',
       responsibilities: 'RESPONSIBILITIES',
       religionPreference: 'Any Religion',
+      person: 'people',
+      allowance: 'Allowance'
     }
   }
 
@@ -109,7 +115,7 @@ export default function ReportsPage() {
       { data: svcLookup },
       { data: workLookup },
     ] = await Promise.all([
-      supabase.from('requests').select('*, employers(city, district, country, private_room)')
+      supabase.from('requests').select('*, employers(city, district, country, private_room, full_name)')
         .not('stage', 'in', '("Yerleşti","Anlaşamadılar","Vazgeçti")')
         .eq('is_active', true)
         .order('created_at', { ascending: false }),
@@ -117,7 +123,7 @@ export default function ReportsPage() {
       supabase.from('lookup_languages').select('name, name_en'),
       supabase.from('lookup_religions').select('name, name_en'),
       supabase.from('lookup_services').select('name, name_en'),
-      supabase.from('lookup_work_types').select('name, name_en'),
+      supabase.from('lookup_work_types').select('name, name_en')
     ])
     if (data) setRequests(data)
     if (natLookup) setNatLookup(natLookup)
@@ -153,11 +159,14 @@ export default function ReportsPage() {
   return (
 
 
-    <div style={{ background: '#777373', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+    <div style={{
+      background: '#777373', minHeight: '95vh', display: 'flex', flexDirection: 'column', alignItems: 'center',
+      justifyContent: 'center', padding: '5px'
+    }}>
 
 
       {/* Navigasyon */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '10px' }}>
         <button onClick={() => setCurrent(c => Math.max(0, c - 1))} disabled={current === 0}
           style={{
             background: current === 0 ? 'rgba(255,255,255,0.1)' : '#E8673A',
@@ -203,72 +212,88 @@ export default function ReportsPage() {
 
       {/* Story Kartı */}
 
-
-
       <div id="story-card" style={{
         width: '390px',
-        minHeight: '693px',
+        height: '693px',
         borderRadius: '24px',
         overflow: 'hidden',
         position: 'relative',
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "'Poppins', sans-serif",
         background: '#FDF6EE',
         boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+        display: 'flex',
+        flexDirection: 'column',
       }}>
 
         {/* Üst turuncu bölüm */}
         <div style={{
           background: 'linear-gradient(135deg, #E8673A 0%, #d4522a 100%)',
-          padding: '28px 24px 32px',
+          padding: '5px',
           position: 'relative',
           overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
         }}>
           {/* Dekoratif daireler */}
           <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
           <div style={{ position: 'absolute', top: 20, right: 20, width: 60, height: 60, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+          <div style={{ position: 'absolute', top: -25, left: -15, width: 97, height: 97, borderRadius: '50%', background: 'rgba(255, 255, 255, 0.16)' }} />
+          {r.employers?.full_name && (
+            <div style={{ position: 'absolute', top: 16, right: 16, textAlign: 'right' }}>
+              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px', fontWeight: '500' }}>
+                - {r.employers.full_name.split(' ')[0]} ..
+              </span>
+            </div>
+          )}
 
           {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <img src="/bondlio-icon.png" alt="Bondlio" style={{ height: '28px', width: 'auto', filter: 'brightness(0) invert(1)' }} />
-            <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px', fontWeight: '600', letterSpacing: '0.5px' }}>bondlio</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '5px' }}>
+            <img src="/bondlio-icon.png" alt="Bondlio" style={{ height: '34px', width: 'auto', filter: 'brightness(0) invert(1)', display: 'block' }} />
+
           </div>
 
           {/* İş ilanı etiketi */}
           <div style={{
             display: 'inline-block',
-            background: 'rgba(255,255,255,0.2)',
-            borderRadius: '20px',
-            padding: '4px 12px',
-            marginBottom: '12px',
+            background: 'rgba(80, 79, 79, 0.76)',
+            borderRadius: '14px',
+            padding: '1px 10px',
+            marginBottom: '5px',
           }}>
-            <span style={{ color: '#fff', fontSize: '11px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase' }}>
-              <span>{L.searching}</span>
+            <span style={{ color: '#fff', fontSize: '12px', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase' }}>
+              <span> - {L.searching} -</span>
             </span>
           </div>
 
           {/* Hizmet */}
-          <h1 style={{
-            color: '#fff',
-            fontSize: '26px',
-            fontWeight: '800',
-            lineHeight: '1.2',
-            marginBottom: '8px',
-            textTransform: 'uppercase',
-            letterSpacing: '-0.5px',
+          <div style={{
+            width: '100%',
+            marginBottom: '2px',
           }}>
-            {reportLang === 'tr' ? r.service?.split('/')[0].trim() : toEn(r.service || '', svcLookup)}
-          </h1>
+            <div style={{
+              background: 'rgba(235, 232, 232, 0.86)',
+              borderRadius: '10px',
+              padding: '3px 0',
+              width: '100%',
+            }}>
+              <h1 style={{ color: '#070707', fontSize: '28px', fontWeight: '800', lineHeight: '1.1', textTransform: 'uppercase', letterSpacing: '-0.5px', margin: 0 }}>
+                {reportLang === 'tr' ? r.service?.split('/')[0].trim() : toEn(r.service || '', svcLookup)}
+              </h1>
+            </div>
+          </div>
 
           {/* Çalışma şekli */}
           {r.work_type && (
             <div style={{
               display: 'inline-block',
-              background: '#fff',
-              borderRadius: '20px',
-              padding: '4px 14px',
-              marginTop: '4px',
+              background: '#ffffffe8',
+              borderRadius: '12px',
+              padding: '0px 10px',
+              marginTop: '2px',
             }}>
-              <span style={{ color: '#E8673A', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>
+              <span style={{ color: '#ca4705', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>
                 {reportLang === 'en' ? toEn(r.work_type || '', workLookup).toLocaleUpperCase('en-US') : r.work_type}
               </span>
             </div>
@@ -276,82 +301,115 @@ export default function ReportsPage() {
         </div>
 
         {/* İçerik */}
-        <div style={{ padding: '20px 24px' }}>
+        <div style={{ padding: '0', flex: 1, display: 'flex', flexDirection: 'column' }}>
 
           {/* Lokasyon */}
           {location && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #ede9e3' }}>
-              <span style={{ fontSize: '18px' }}>📍</span>
-              <span style={{ fontSize: '14px', fontWeight: '600', color: '#4A4A4A' }}>{location}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+              <MapPin size={14} color="#E8673A" />
+              <span style={{ fontSize: '13px', fontWeight: '600', color: '#4A4A4A' }}>{location}</span>
             </div>
           )}
 
-          {/* Bilgiler grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+          {/* Bilgiler — tablo satırları */}
+          {(r.num_kids > 0 || r.min_age || r.max_age) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+              {r.num_kids > 0 && (
+                <>
+                  <Users size={14} color="#E8673A" />
+                  <span style={{ fontSize: '12px', color: '#4A4A4A' }}>{r.num_kids} {labels[reportLang].person}{r.kids_ages ? ` (${r.kids_ages})` : ''}</span>
+                </>
+              )}
+              {(r.min_age || r.max_age) && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
+                  <BadgeInfo size={14} color="#E8673A" />
+                  <span style={{ fontSize: '12px', color: '#4A4A4A' }}>
+                    {`${L.age}: `}{r.min_age && r.max_age ? `${r.min_age} - ${r.max_age}` : r.min_age ? `Min ${r.min_age}` : r.max_age ? `Max ${r.max_age}` : '—'}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
-            {r.num_kids > 0 && (
-              <InfoItem icon={Users} value={`${r.num_kids} kişi${r.kids_ages ? ` (${r.kids_ages})` : ''}`} />
-            )}
+          {r.desired_nationality?.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+              <Globe size={14} color="#E8673A" />
+              <span style={{ fontSize: '12px', color: '#E8673A', fontWeight: '600' }}>
+                {r.desired_nationality.map(n => reportLang === 'tr' ? n : toEn(n, natLookup)).join(', ')}
+              </span>
+            </div>
+          )}
 
-            {(r.min_age || r.max_age) && (
-              <InfoItem icon={BadgeInfo}
-                value={r.min_age && r.max_age ? `${r.min_age} - ${r.max_age}` : r.min_age ? `Min ${r.min_age}` : `Max ${r.max_age}`} />
-            )}
+          {r.language_pref?.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+              <Languages size={14} color="#E8673A" />
+              <span style={{ fontSize: '12px', color: '#4A4A4A' }}>{r.language_pref.map(l => toEn(l, langLookup)).join(', ')}</span>
+            </div>
+          )}
 
-            {r.desired_nationality?.length > 0 && (
-              <InfoItem icon={Globe}
-                value={r.desired_nationality.map(n => reportLang === 'tr' ? n : toEn(n, natLookup)).join(', ')}
-                highlight />
-            )}
+          {(r.religion_pref || r.desired_start) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+              {r.desired_start && (
+                <>
+                  <Calendar size={14} color="#E8673A" />
+                  <span style={{ fontSize: '12px', color: '#4A4A4A' }}>
+                    {`${L.start}: `}{new Date(r.desired_start).toLocaleDateString(reportLang === 'tr' ? 'tr-TR' : 'en-GB', { month: 'long', year: 'numeric' })}
+                  </span>
+                </>
+              )}
+              {r.religion_pref && (
+                <>
+                  <BookOpen size={14} color="#E8673A" style={{ marginLeft: r.desired_start ? 'auto' : undefined }} />
+                  <span style={{ fontSize: '12px', color: '#4A4A4A' }}>
+                    {reportLang === 'tr' ? r.religion_pref : toEn(r.religion_pref, relLookup)}
+                  </span>
+                </>
+              )}
+            </div>
+          )}
 
-            {r.language_pref?.length > 0 && (
-              <InfoItem icon={Languages}
-                value={r.language_pref.map(l => toEn(l, langLookup)).join(', ')} />
-            )}
 
-            {r.religion_pref && (
-              <InfoItem icon={BookOpen} value={r.religion_pref && r.religion_pref !== ''
-                ? (reportLang === 'tr' ? r.religion_pref : toEn(r.religion_pref, relLookup))
-                : L.religionPreference} />
-            )}
 
-            {r.desired_start && (
-              <InfoItem icon={Calendar}
-                value={new Date(r.desired_start).toLocaleDateString(reportLang === 'tr' ? 'tr-TR' : 'en-GB', { month: 'long', year: 'numeric' })} />
-            )}
+          {(r.private_room !== null || r.has_pet !== null) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+              <>
+                <Home size={14} color="#E8673A" />
+                <span style={{ fontSize: '12px', color: '#4A4A4A' }}>
+                  {r.private_room ? L.privateRoom : (reportLang === 'tr' ? 'Özel Oda Yok' : 'No Private Room')}
+                </span>
+              </>
+              <>
+                <PawPrint size={14} color="#E8673A" style={{ marginLeft: 'auto' }} />
+                <span style={{ fontSize: '12px', color: '#4A4A4A' }}>
+                  {r.has_pet ? L.petsHome : (reportLang === 'tr' ? 'Evcil Hayvan Yok' : 'No Pets')}
+                </span>
+              </>
+            </div>
+          )}
 
-            {r.private_room && (
-              <InfoItem icon={Home} value={L.privateRoom} />
-            )}
-            {r.has_pet && (
-              <InfoItem icon={PawPrint} value={L.petsHome} />
-            )}
 
-          </div>
 
           {/* Sorumluluklar */}
           {r.responsibilities?.length > 0 && (
-            <div style={{ marginBottom: '12px' }}>
+            <div style={{ padding: '9px 20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                <ClipboardList size={14} color="#9CA3AF" />
-                <span style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: '600', letterSpacing: '0.5px' }}>
-                  {L.responsibilities}
-                </span>
+                <ClipboardList size={14} color="#E8673A" />
+                <span style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: '600', letterSpacing: '0.5px' }}>{L.responsibilities}</span>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                {r.responsibilities.map((resp: string) => {
+                {[...r.responsibilities].sort((a, b) => {
+                  const priority = ['Çocuk Bakımı', 'Yaşlı Bakımı', 'Yeni Doğan']
+                  const ai = priority.findIndex(p => a.includes(p))
+                  const bi = priority.findIndex(p => b.includes(p))
+                  if (ai === -1 && bi === -1) return 0
+                  if (ai === -1) return 1
+                  if (bi === -1) return -1
+                  return ai - bi
+                }).map((resp: string) => {
                   const respItem = respLookup.find(l => l.name === resp)
                   const respLabel = reportLang === 'en' && respItem?.name_en ? respItem.name_en : resp
                   return (
-                    <span key={resp} style={{
-                      background: '#F7F6FB',
-                      border: '1px solid #ede9e3',
-                      borderRadius: '20px',
-                      padding: '2px 10px',
-                      fontSize: '11px',
-                      color: '#4A4A4A',
-                      fontWeight: '500'
-                    }}>
+                    <span key={resp} style={{ border: '1px solid #ede9e3', borderRadius: '20px', padding: '2px 10px', fontSize: '11px', color: '#4A4A4A', fontWeight: '500' }}>
                       {respLabel}
                     </span>
                   )
@@ -360,57 +418,33 @@ export default function ReportsPage() {
             </div>
           )}
 
+          <div style={{ flex: 1 }} />
 
           {/* Koşullar */}
           {(!r.smoking_ok || !r.drinking_ok || r.legal_required) && (
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {!r.smoking_ok && (
-                  <span style={{ background: '#FEF2F2', color: '#EF4444', fontSize: '11px', fontWeight: '600', padding: '4px 10px', borderRadius: '20px' }}>
-                    {L.noSmoking}
-                  </span>
-                )}
-                {!r.drinking_ok && (
-                  <span style={{ background: '#FEF2F2', color: '#EF4444', fontSize: '11px', fontWeight: '600', padding: '4px 10px', borderRadius: '20px' }}>
-                    {L.noAlcohol}
-                  </span>
-                )}
-                {r.legal_required && (
-                  <span style={{ background: '#fdf1ec', color: '#E8673A', fontSize: '11px', fontWeight: '600', padding: '4px 10px', borderRadius: '20px' }}>
-                    {L.legal}
-                  </span>
-                )}
-              </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', padding: '9px 20px' }}>
+              {!r.smoking_ok && <span style={{ color: '#EF4444', fontSize: '11px', fontWeight: '600', padding: '3px 10px', borderRadius: '20px', border: '1px solid #FCA5A5' }}>{L.noSmoking}</span>}
+              {!r.drinking_ok && <span style={{ color: '#EF4444', fontSize: '11px', fontWeight: '600', padding: '3px 10px', borderRadius: '20px', border: '1px solid #FCA5A5' }}>{L.noAlcohol}</span>}
+              {r.legal_required && <span style={{ color: '#E8673A', fontSize: '11px', fontWeight: '600', padding: '3px 10px', borderRadius: '20px', border: '1px solid #E8673A' }}>{L.legal}</span>}
             </div>
           )}
 
-
-          {/* Notlar
-
-          {r.notes && (
-            <div style={{ background: '#F7F6FB', borderRadius: '12px', padding: '10px 14px', marginBottom: '16px' }}>
-              <p style={{ fontSize: '12px', color: '#6B7280', lineHeight: '1.5' }}>{r.notes}</p>
-            </div>
-          )}
-
-         */}
-
-          {/* Maaş — en altta vurgulu */}
-          {r.max_salary && (
-            <div style={{
-              background: 'linear-gradient(135deg, #E8673A 0%, #d4522a 100%)',
-              borderRadius: '16px',
-              padding: '16px 20px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}>
-              <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '12px', fontWeight: '600' }}> {L.salary} </span>
-              <span style={{ color: '#fff', fontSize: '22px', fontWeight: '800' }}>
-                {r.max_salary.toLocaleString('tr-TR')} {r.salary_currency}
+          {/* Maaş */}
+          <div style={{ background: 'linear-gradient(135deg, #E8673A 0%, #d4522a 100%)', borderRadius: '16px', margin: '0 7px 7px', padding: '10px 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', fontWeight: '600' }}>{L.salary}</span>
+              <span style={{ color: '#fff', fontSize: '24px', fontWeight: '800', fontFamily: "'Poppins', sans-serif" }}>
+                {r.max_salary ? `${r.max_salary.toLocaleString('tr-TR')} ${r.salary_currency}` : '—'}
               </span>
             </div>
-          )}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+              <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', fontWeight: '600' }}>{L.allowance}</span>
+              <span style={{ color: '#fff', fontSize: '16px', fontWeight: '700', fontFamily: "'Poppins', sans-serif" }}>
+                {r.allowance ? `${r.allowance.toLocaleString('tr-TR')} ${r.allowance_currency || 'TRY'}` : '—'}
+              </span>
+            </div>
+          </div>
+
         </div>
 
         {/* Footer */}
