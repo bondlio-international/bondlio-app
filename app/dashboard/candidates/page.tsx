@@ -667,9 +667,16 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">{L.currentCity}</label>
-                  <input value={form.current_city} onChange={e => set('current_city', e.target.value)}
+                  <select value={form.current_city} onChange={e => set('current_city', e.target.value)}
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                    style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
+                    style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}>
+                    <option value="">{L.select}</option>
+                    {lookups.cities?.map(c => (
+                      <option key={c.id} value={c.name}>
+                        {lang === 'en' ? (c.name_en || c.name) : c.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">{L.religion}</label>
