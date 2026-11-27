@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Users, Globe, Languages, BookOpen, Calendar, Home, PawPrint, BadgeInfo, ClipboardList, MapPin } from 'lucide-react'
+import domtoimage from 'dom-to-image-more'
 
 
 type Request = {
@@ -137,6 +138,19 @@ export default function ReportsPage() {
     if (respData) setRespLookup(respData)
   }
 
+  const downloadImage = async () => {
+    const card = document.getElementById('story-card')
+    if (!card) return
+    const dataUrl = await domtoimage.toJpeg(card, {
+      quality: 0.95,
+      scale: 2,
+    })
+    const link = document.createElement('a')
+    link.download = `bondlio-${r.service?.split('/')[0].trim() || 'ilan'}-${r.id}.jpg`
+    link.href = dataUrl
+    link.click()
+  }
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: '#1a1a1a' }}>
       <p className="text-gray-400">Yükleniyor...</p>
@@ -174,7 +188,7 @@ export default function ReportsPage() {
             padding: '10px 20px', fontSize: '12px', fontWeight: '600',
             cursor: current === 0 ? 'not-allowed' : 'pointer',
             opacity: current === 0 ? 0.4 : 1,
-          }}>← Önceki</button>
+          }}>← </button>
 
         <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>
           {current + 1} / {requests.length}
@@ -187,7 +201,22 @@ export default function ReportsPage() {
             padding: '10px 20px', fontSize: '12px', fontWeight: '600',
             cursor: current === requests.length - 1 ? 'not-allowed' : 'pointer',
             opacity: current === requests.length - 1 ? 0.4 : 1,
-          }}>Sonraki →</button>
+          }}> →</button>
+
+
+        <button onClick={downloadImage}
+          style={{
+            background: '#fff',
+            color: '#E8673A',
+            border: '1px solid #E8673A',
+            borderRadius: '12px',
+            padding: '10px 16px',
+            fontSize: '12px',
+            fontWeight: '700',
+            cursor: 'pointer',
+          }}>
+          ⬇ JPG
+        </button>
 
         {/* TR/EN Toggle */}
         <div style={{ display: 'flex', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.2)' }}>
@@ -305,9 +334,9 @@ export default function ReportsPage() {
 
           {/* Lokasyon */}
           {location && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
               <MapPin size={14} color="#E8673A" />
-              <span style={{ fontSize: '13px', fontWeight: '600', color: '#4A4A4A' }}>{location}</span>
+              <span style={{ fontSize: '15px', fontWeight: '700', color: '#4A4A4A' }}>{location}</span>
             </div>
           )}
 
@@ -430,9 +459,9 @@ export default function ReportsPage() {
           )}
 
           {/* Maaş */}
-          <div style={{ background: 'linear-gradient(135deg, #E8673A 0%, #d4522a 100%)', borderRadius: '16px', margin: '0 7px 7px', padding: '10px 20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', fontWeight: '600' }}>{L.salary}</span>
+          <div style={{ background: 'linear-gradient(135deg, #E8673A 0%, #d4522a 100%)', borderRadius: '16px', margin: '0 10px 10px', padding: '10px 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+              <span style={{ color: 'rgba(255, 255, 255, 0.94)', fontSize: '20px', fontWeight: '800' }}>{L.salary}</span>
               <span style={{ color: '#fff', fontSize: '24px', fontWeight: '800', fontFamily: "'Poppins', sans-serif" }}>
                 {r.max_salary ? `${r.max_salary.toLocaleString('tr-TR')} ${r.salary_currency}` : '—'}
               </span>
