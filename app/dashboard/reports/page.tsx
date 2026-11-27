@@ -158,43 +158,45 @@ export default function ReportsPage() {
 
       {/* Navigasyon */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
-        <button
-          onClick={() => setCurrent(c => Math.max(0, c - 1))}
-          disabled={current === 0}
+        <button onClick={() => setCurrent(c => Math.max(0, c - 1))} disabled={current === 0}
           style={{
             background: current === 0 ? 'rgba(255,255,255,0.1)' : '#E8673A',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '12px',
-            padding: '10px 20px',
-            fontSize: '12px',
-            fontWeight: '600',
+            color: '#fff', border: 'none', borderRadius: '12px',
+            padding: '10px 20px', fontSize: '12px', fontWeight: '600',
             cursor: current === 0 ? 'not-allowed' : 'pointer',
             opacity: current === 0 ? 0.4 : 1,
-          }}>
-          ← Önceki
-        </button>
+          }}>← Önceki</button>
 
         <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>
           {current + 1} / {requests.length}
         </span>
 
-        <button
-          onClick={() => setCurrent(c => Math.min(requests.length - 1, c + 1))}
-          disabled={current === requests.length - 1}
+        <button onClick={() => setCurrent(c => Math.min(requests.length - 1, c + 1))} disabled={current === requests.length - 1}
           style={{
             background: current === requests.length - 1 ? 'rgba(255,255,255,0.1)' : '#E8673A',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '12px',
-            padding: '10px 20px',
-            fontSize: '12px',
-            fontWeight: '600',
+            color: '#fff', border: 'none', borderRadius: '12px',
+            padding: '10px 20px', fontSize: '12px', fontWeight: '600',
             cursor: current === requests.length - 1 ? 'not-allowed' : 'pointer',
             opacity: current === requests.length - 1 ? 0.4 : 1,
-          }}>
-          Sonraki →
-        </button>
+          }}>Sonraki →</button>
+
+        {/* TR/EN Toggle */}
+        <div style={{ display: 'flex', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.2)' }}>
+          {(['tr', 'en'] as const).map(l => (
+            <button key={l} onClick={() => setReportLang(l)}
+              style={{
+                padding: '10px 16px',
+                fontSize: '12px', fontWeight: '700',
+                border: 'none', cursor: 'pointer',
+                background: reportLang === l ? '#E8673A' : 'rgba(255,255,255,0.1)',
+                color: reportLang === l ? '#fff' : 'rgba(255,255,255,0.5)',
+                transition: 'all 0.15s',
+                letterSpacing: '0.5px',
+              }}>
+              {l.toUpperCase()}
+            </button>
+          ))}
+        </div>
       </div>
 
 
