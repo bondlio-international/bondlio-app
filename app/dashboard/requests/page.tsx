@@ -53,6 +53,7 @@ type Request = {
   followup_3: string
   farewell_date: string
   alert_date: string
+  alert_time: string
   notes: string
   created_at: string
   employers?: { full_name: string }
@@ -311,6 +312,7 @@ export default function RequestsPage() {
                 <Bell size={11} color="#EF4444" />
                 <span className="text-xs" style={{ color: '#EF4444' }}>
                   {new Date(alert).toLocaleDateString(lang === 'en' ? 'en-GB' : 'tr-TR')}
+                  {row.original.alert_time ? ` ${row.original.alert_time}` : ''}
                 </span>
               </div>
             )}
@@ -572,6 +574,7 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
     followup_3: request?.followup_3 ?? '',
     farewell_date: request?.farewell_date ?? '',
     alert_date: request?.alert_date ?? '',
+    alert_time: request?.alert_time ?? '',
     notes: request?.notes ?? '',
     is_active: request?.is_active ?? true,
     private_room: request?.private_room ?? true,
@@ -612,6 +615,7 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
       followup_3: form.followup_3 || null,
       farewell_date: form.farewell_date || null,
       alert_date: form.alert_date || null,
+      alert_time: form.alert_time || null,
       employer_agent_id: form.employer_agent_id ? Number(form.employer_agent_id) : null,
       candidate_agent_id: form.candidate_agent_id ? Number(form.candidate_agent_id) : null,
     }
@@ -945,7 +949,7 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
 
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#E8673A' }}>{L.otherDates}</p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">{L.desiredStart}</label>
                 <input type="date" value={form.desired_start} onChange={e => set('desired_start', e.target.value)}
@@ -955,6 +959,12 @@ function RequestModal({ request, employers, agents, candidates, lookups, lang, o
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">🔔 {L.alertDate}</label>
                 <input type="date" value={form.alert_date} onChange={e => set('alert_date', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                  style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">🔔 Saat</label>
+                <input type="time" value={form.alert_time} onChange={e => set('alert_time', e.target.value)}
                   className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                   style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
               </div>

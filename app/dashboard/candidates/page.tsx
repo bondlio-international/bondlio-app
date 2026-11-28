@@ -58,6 +58,7 @@ type Candidate = {
   created_at: string
   pet_ok: boolean
   ok_to_relocate: boolean
+  birth_date: string
 }
 
 export default function CandidatesPage() {
@@ -180,6 +181,7 @@ export default function CandidatesPage() {
             )}
             <p className="text-xs" style={{ color: '#9CA3AF' }}>
               {[
+                r.birth_date ? `${new Date().getFullYear() - new Date(r.birth_date).getFullYear()} ${lang === 'en' ? 'yo' : 'yaş'}` : null,
                 r.num_children != null ? `${r.num_children} ${lang === 'en' ? 'kids' : 'çocuk'}` : null,
                 religion || null,
               ].filter(Boolean).join(', ') || '—'}
@@ -570,6 +572,7 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
     documents_url: candidate?.documents_url ?? '',
     notes: candidate?.notes ?? '',
     ok_to_relocate: candidate?.ok_to_relocate ?? false,
+    birth_date: candidate?.birth_date ?? '',
   })
   const [saving, setSaving] = useState(false)
   const set = (field: string, value: unknown) => setForm(f => ({ ...f, [field]: value }))
@@ -591,6 +594,7 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
       expected_salary: form.expected_salary ? Number(form.expected_salary) : null,
       num_children: Number(form.num_children),
       available_from: form.available_from || null,
+      birth_date: form.birth_date || null,
     }
     if (candidate) {
       const { error } = await supabase.from('candidates').update(payload).eq('id', candidate.id)
@@ -760,6 +764,13 @@ function CandidateModal({ candidate, lookups, onClose, onSave }: {
                   </select>
                 </div>
 
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Doğum Tarihi</label>
+                  <input type="date" value={form.birth_date}
+                    onChange={e => set('birth_date', e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
+                </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">{L.numChildren}</label>
                   <input type="number" min={0} value={form.num_children}

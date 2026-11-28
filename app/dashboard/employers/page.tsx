@@ -38,6 +38,7 @@ type Employer = {
   rank: number
   notes: string
   created_at: string
+  birth_date: string
 }
 
 
@@ -105,9 +106,16 @@ export default function EmployersPage() {
       accessorKey: 'country',
       header: L.country,
       cell: ({ row }) => (
-        <span className="text-sm" style={{ color: '#4A4A4A' }}>
-          {showName(row.original.country, lookups.countries, lang)}
-        </span>
+         <div>
+          <p className="text-sm" style={{ color: '#4A4A4A' }}>
+            {showName(row.original.country, lookups.countries, lang)}
+          </p>
+          {row.original.birth_date && (
+            <p className="text-xs" style={{ color: '#9CA3AF' }}>
+              {new Date().getFullYear() - new Date(row.original.birth_date).getFullYear()} {lang === 'en' ? 'yo' : 'yaş'}
+            </p>
+          )}
+        </div>
       ),
       filterFn: 'equals',
     },
@@ -405,6 +413,7 @@ function EmployerModal({ employer, lookups, onClose, onSave }: {
     blacklist: employer?.blacklist ?? false,
     rank: employer?.rank ?? 3,
     notes: employer?.notes ?? '',
+    birth_date: employer?.birth_date ?? '',
   })
   const [saving, setSaving] = useState(false)
   const set = (field: string, value: unknown) => setForm(f => ({ ...f, [field]: value }))
@@ -445,8 +454,8 @@ function EmployerModal({ employer, lookups, onClose, onSave }: {
               style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
           </div>
 
-          {/* Telefon + Email */}
-          <div className="grid grid-cols-2 gap-4">
+           {/* Telefon + Email + Doğum Tarihi */}
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1"> {L.phone} </label>
               <input value={form.phone} onChange={e => set('phone', e.target.value)}
@@ -456,6 +465,13 @@ function EmployerModal({ employer, lookups, onClose, onSave }: {
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1"> {L.email} </label>
               <input value={form.email} onChange={e => set('email', e.target.value)}
+                className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Doğum Tarihi</label>
+              <input type="date" value={form.birth_date}
+                onChange={e => set('birth_date', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }} />
             </div>
