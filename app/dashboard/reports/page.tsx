@@ -302,13 +302,13 @@ export default function ReportsPage() {
             marginBottom: '2px',
           }}>
             <div style={{
-              background: 'rgba(235, 232, 232, 0.86)',
+              background: 'hsla(0, 7%, 92%, 0.86)',
               borderRadius: '10px',
-              padding: '3px 0',
+              padding: '7px 1px',
               width: '100%',
             }}>
-              <h1 style={{ color: '#070707', fontSize: '28px', fontWeight: '800', lineHeight: '1.1', textTransform: 'uppercase', letterSpacing: '-0.5px', margin: 0 }}>
-                {reportLang === 'tr' ? r.service?.split('/')[0].trim() : toEn(r.service || '', svcLookup)}
+              <h1 style={{ color: '#070707', fontSize: '26px', fontWeight: '800', lineHeight: '1.1', textTransform: 'uppercase', letterSpacing: '-0.5px', margin: 0 }}>
+                 {reportLang === 'tr' ? r.service?.split('/')[0].trim() : toEn(r.service || '', svcLookup).toUpperCase()}
               </h1>
             </div>
           </div>

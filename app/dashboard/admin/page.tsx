@@ -156,7 +156,7 @@ export default function AdminPage() {
                                 onChange={e => setNewForm(f => ({ ...f, name: e.target.value }))}
                                 placeholder={L.namePlaceholder}
                                 className="flex-1 px-3 py-1.5 rounded-lg text-sm outline-none"
-                                style={{ border: '1px solid #E8673A', color: '#4A4A4A' }}
+                                style={{ border: '1px solid #E8673A', color: '#4A4A4A', minWidth: 0 }}
                                 onKeyDown={e => e.key === 'Enter' && handleAdd()}
                                 autoFocus
                             />
@@ -165,7 +165,7 @@ export default function AdminPage() {
                                     value={newForm.name_en ?? ''}
                                     onChange={e => setNewForm(f => ({ ...f, name_en: e.target.value }))}
                                     placeholder="English name"
-                                    className="w-32 px-3 py-1.5 rounded-lg text-sm outline-none"
+                                    className="flex-1 px-3 py-1.5 rounded-lg text-sm outline-none"
                                     style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}
                                 />
                             )}
@@ -187,6 +187,14 @@ export default function AdminPage() {
                                     style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}
                                 />
                             )}
+                            <input
+                                type="number"
+                                value={newForm.sort_order ?? ''}
+                                onChange={e => setNewForm(f => ({ ...f, sort_order: Number(e.target.value) }))}
+                                placeholder={L.order}
+                                className="w-28 px-3 py-1.5 rounded-lg text-sm outline-none"
+                                style={{ border: '1px solid #ede9e3', color: '#4A4A4A' }}
+                            />
                             {activeConfig.hasColor && (
                                 <div className="flex items-center gap-1.5">
                                     <Palette size={14} color="#9CA3AF" />

@@ -13,7 +13,7 @@ import {
   Link2,
   TrendingUp,
   TrendingDown,
-  BarChart3,
+  List,
   LogOut,
   Menu,
   Settings,
@@ -32,7 +32,7 @@ const menuItems = [
   { href: '/dashboard/matches', labelTr: 'Eşleşmeler', labelEn: 'Matches', icon: Link2 },
   { href: '/dashboard/income', labelTr: 'Gelirler', labelEn: 'Income', icon: TrendingUp },
   { href: '/dashboard/expenses', labelTr: 'Giderler', labelEn: 'Expenses', icon: TrendingDown },
-  { href: '/dashboard/reports', labelTr: 'Raporlar', labelEn: 'Reports', icon: BarChart3 },
+  { href: '/dashboard/reports', labelTr: 'İş İlanları', labelEn: 'Job Offers', icon: List  },
   { href: '/dashboard/admin', labelTr: 'Admin', labelEn: 'Admin', icon: Settings },
 ]
 
